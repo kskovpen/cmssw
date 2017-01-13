@@ -422,6 +422,10 @@ class ConfigBuilder(object):
 			   for line in textOfFiles:
 				   for fileName in [x for x in line.split() if '.lhe' in x]:
 					   self.process.source.fileNames.append(location+article+'/'+fileName)
+			   #check first if list of LHE files is loaded (not empty)
+			   if len(line)<2:
+				   print 'Issue to load LHE files, please check and try again.'
+				   sys.exit(-1)
 			   if len(args)>2:
 				   self.process.source.skipEvents = cms.untracked.uint32(int(args[2]))
 		   else:
@@ -2216,11 +2220,12 @@ class ConfigBuilder(object):
         # everything else
         #
         # FIXME: remove when no longer needed
-        if "RECO" in self.stepMap or "RAW2RECO" in self.stepMap:
-                self.pythonCfgCode += "\n# Add early deletion of temporary data products to reduce peak memory need\n"
-                self.pythonCfgCode += "from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDeleteForRECO\n"
-                self.pythonCfgCode += "process = customiseEarlyDeleteForRECO(process)\n"
-                self.pythonCfgCode += "# End adding early deletion\n"
+        self.pythonCfgCode += "\n# Add early deletion of temporary data products to reduce peak memory need\n"
+        self.pythonCfgCode += "from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete\n"
+        self.pythonCfgCode += "process = customiseEarlyDelete(process)\n"
+        self.pythonCfgCode += "# End adding early deletion\n"
+        from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
+        self.process = customiseEarlyDelete(self.process)
 
 
 	# make the .io file
