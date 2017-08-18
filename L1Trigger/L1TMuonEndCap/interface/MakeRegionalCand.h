@@ -2,8 +2,14 @@
 //////L1TReginalMuonCandidate with proper values and legths
 //////
 
+#ifndef ADD_MakeRegionalCand
+#define ADD_MakeRegionalCand
+
+
 #include "DataFormats/L1TMuon/interface/RegionalMuonCand.h"
 #include "DataFormats/L1TMuon/interface/RegionalMuonCandFwd.h"
+
+#include <cmath>
 
 int GMT_eta_from_theta[128] = {239, 235, 233, 230, 227, 224, 222, 219, 217, 214, 212, 210, 207, 205, 203, 201,
 			       199, 197, 195, 193, 191, 189, 187, 186, 184, 182, 180, 179, 177, 176, 174, 172,
@@ -118,3 +124,5 @@ l1t::RegionalMuonCand MakeRegionalCand(float pt, int phi, int theta,
   return Cand;
   
 }
+
+#endif

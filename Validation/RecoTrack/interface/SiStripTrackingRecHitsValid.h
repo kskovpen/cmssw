@@ -55,7 +55,7 @@
 #include "Geometry/CommonTopologies/interface/StripTopology.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
 #include "Geometry/CommonDetUnit/interface/GeomDetType.h" 
-#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h" 
+#include "Geometry/CommonDetUnit/interface/GeomDet.h" 
 #include "Geometry/CommonDetUnit/interface/GluedGeomDet.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
@@ -425,21 +425,16 @@ class SiStripTrackingRecHitsValid : public DQMEDAnalyzer
   unsigned long long m_cacheID_;
   edm::ParameterSet Parameters;
 
-  //const StripTopology* topol;
-//  std::vector<RecHitProperties> rechitrphi;
-//  std::vector<RecHitProperties> rechitstereo;
-//  std::vector<RecHitProperties> rechitmatched;
   RecHitProperties rechitpro;
 
-  void rechitanalysis(TrajectoryStateOnSurface tsos, const TransientTrackingRecHit::ConstRecHitPointer thit, const StripGeomDetUnit *stripdet, edm::ESHandle < StripClusterParameterEstimator > stripcpe, TrackerHitAssociator& associate,  bool simplehit1or2D);
+  void rechitanalysis(LocalVector ldir, const TrackingRecHit *rechit, const StripGeomDetUnit *stripdet, edm::ESHandle < StripClusterParameterEstimator > stripcpe, TrackerHitAssociator& associate,  bool simplehit1or2D);
   
   enum class MatchStatus { matched, monoHit, stereoHit};
-  void rechitanalysis_matched(TrajectoryStateOnSurface tsos, const TransientTrackingRecHit::ConstRecHitPointer thit, const GluedGeomDet* gluedDet,TrackerHitAssociator& associate, edm::ESHandle < StripClusterParameterEstimator > stripcpe, const MatchStatus matchedmonorstereo);
+  void rechitanalysis_matched(LocalVector ldir, const TrackingRecHit *rechit, const GluedGeomDet* gluedDet,TrackerHitAssociator& associate, edm::ESHandle < StripClusterParameterEstimator > stripcpe, const MatchStatus matchedmonorstereo);
  
 
   float track_rapidity;
-  //edm::InputTag trajectoryInput_;
-  edm::EDGetTokenT<std::vector<Trajectory> > trajectoryInputToken_;
+  edm::EDGetTokenT<std::vector<reco::Track> > tracksInputToken_;
 
 };
 

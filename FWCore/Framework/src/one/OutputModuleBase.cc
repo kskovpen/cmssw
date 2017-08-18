@@ -84,6 +84,7 @@ namespace edm {
     void OutputModuleBase::configure(OutputModuleDescription const& desc) {
       remainingEvents_ = maxEvents_ = desc.maxEvents_;
       origBranchIDLists_ = desc.branchIDLists_;
+      subProcessParentageHelper_ = desc.subProcessParentageHelper_;
     }
     
     void OutputModuleBase::selectProducts(ProductRegistry const& preg,
@@ -314,27 +315,6 @@ namespace edm {
     
     void OutputModuleBase::doRespondToCloseInputFile(FileBlock const& fb) {
       doRespondToCloseInputFile_(fb);
-    }
-    
-    void
-    OutputModuleBase::doPreForkReleaseResources() {
-      preForkReleaseResources();
-    }
-    
-    void
-    OutputModuleBase::doPostForkReacquireResources(unsigned int iChildIndex, unsigned int iNumberOfChildren) {
-      postForkReacquireResources(iChildIndex, iNumberOfChildren);
-    }
-    
-    void
-    OutputModuleBase::preForkReleaseResources() {}
-    
-    void
-    OutputModuleBase::postForkReacquireResources(unsigned int /*iChildIndex*/, unsigned int /*iNumberOfChildren*/) {}
-
-    
-    void OutputModuleBase::maybeOpenFile() {
-      if(!isFileOpen()) reallyOpenFile();
     }
     
     void OutputModuleBase::doCloseFile() {

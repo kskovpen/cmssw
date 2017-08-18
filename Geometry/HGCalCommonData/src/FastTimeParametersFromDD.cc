@@ -3,7 +3,7 @@
 #include "DetectorDescription/Core/interface/DDCompactView.h"
 #include "DetectorDescription/Core/interface/DDFilteredView.h"
 #include "DetectorDescription/Core/interface/DDVectorGetter.h"
-#include "DetectorDescription/Base/interface/DDutils.h"
+#include "DetectorDescription/Core/interface/DDutils.h"
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "CLHEP/Units/GlobalSystemOfUnits.h"
@@ -26,10 +26,8 @@ bool FastTimeParametersFromDD::build(const DDCompactView* cpv,
   std::string attribute = "Volume"; 
   std::string value     = name;
   DDValue val(attribute, value, 0.0);
-  DDSpecificsFilter filter;
-  filter.setCriteria(val, DDCompOp::equals);
-  DDFilteredView fv(*cpv);
-  fv.addFilter(filter);
+  DDSpecificsMatchesValueFilter filter{val};
+  DDFilteredView fv(*cpv,filter);
   bool ok = fv.firstChild();
 
   if (ok) {

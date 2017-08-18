@@ -17,9 +17,9 @@ workflows[204]=['',['QQH1352T','DIGIPU1','RECOPU1','HARVEST']]
 workflows[205]=['',['ZTT','DIGIPU1','RECOPU1','HARVEST']]
 
 #heavy ions tests
-workflows[300]=['Pyquen_GammaJet_pt20_2760GeV',['Pyquen_GammaJet_pt20_2760GeV','DIGIHIMIX','RECOHIMIX','HARVESTHI']]
-workflows[301]=['Pyquen_DiJet_pt80to120_2760GeV',['Pyquen_DiJet_pt80to120_2760GeV','DIGIHIMIX','RECOHIMIX','HARVESTHI']]
-workflows[302]=['Pyquen_ZeemumuJets_pt10_2760GeV',['Pyquen_ZeemumuJets_pt10_2760GeV','DIGIHIMIX','RECOHIMIX','HARVESTHI']]
+workflows[300]=['Pyquen_GammaJet_pt20_2760GeV',['Pyquen_GammaJet_pt20_2760GeV','DIGIHIMIX','RECOHIMIX','HARVESTHI2018']]
+workflows[301]=['Pyquen_DiJet_pt80to120_2760GeV',['Pyquen_DiJet_pt80to120_2760GeV','DIGIHIMIX','RECOHIMIX','HARVESTHI2018']]
+workflows[302]=['Pyquen_ZeemumuJets_pt10_2760GeV',['Pyquen_ZeemumuJets_pt10_2760GeV','DIGIHIMIX','RECOHIMIX','HARVESTHI2018']]
 
 # 50 ns at 13 TeV and POSTLS1
 workflows[50200]=['',['ZEE_13','DIGIUP15_PU50','RECOUP15_PU50','HARVESTUP15_PU50']]
@@ -41,6 +41,7 @@ workflows[25206]=['',['ZMM_13','DIGIUP15_PU25','RECOUP15_PU25','HARVESTUP15_PU25
 workflows[25207]=['',['NuGun_UP15','DIGIUP15_PU25','RECOUP15_PU25','HARVESTUP15_PU25']]
 workflows[25208]=['',['SMS-T1tttt_mGl-1500_mLSP-100_13','DIGIUP15_PU25','RECOUP15_PU25','HARVESTUP15_PU25']]
 workflows[25209]=['',['QCD_FlatPt_15_3000HS_13','DIGIUP15_PU25','RECOUP15_PU25','HARVESTUP15_PU25']]
+workflows[25214]=['',['TTbarLepton_13','DIGIUP15_PU25','RECOUP15_PU25','HARVESTUP15_PU25']]
 
 # LHE-based fullSim PU  workflows
 workflows[25210]=['',['TTbar012Jets_NLO_Mad_py8_Evt_13','DIGIUP15_PU25','RECOUP15_PU25','HARVESTUP15_PU25']]

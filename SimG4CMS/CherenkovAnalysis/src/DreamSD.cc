@@ -194,11 +194,8 @@ uint32_t DreamSD::setDetUnitId(G4Step * aStep) {
 void DreamSD::initMap(G4String sd, const DDCompactView & cpv) {
 
   G4String attribute = "ReadOutName";
-  DDSpecificsFilter filter;
-  DDValue           ddv(attribute,sd,0);
-  filter.setCriteria(ddv,DDCompOp::equals);
-  DDFilteredView fv(cpv);
-  fv.addFilter(filter);
+  DDSpecificsMatchesValueFilter filter{DDValue(attribute,sd,0)};
+  DDFilteredView fv(cpv,filter);
   fv.firstChild();
 
   const G4LogicalVolumeStore * lvs = G4LogicalVolumeStore::GetInstance();
@@ -524,8 +521,7 @@ bool DreamSD::setPbWO2MaterialProperties_( G4Material* aMaterial ) {
 
   // Calculate Cherenkov angle integrals: 
   // This is an ad-hoc solution (we hold it in the class, not in the material)
-  chAngleIntegrals_ = 
-    std::auto_ptr<G4PhysicsOrderedFreeVector>( new G4PhysicsOrderedFreeVector() );
+  chAngleIntegrals_ = std::make_unique<G4PhysicsOrderedFreeVector>();
 
   int index = 0;
   double currentRI = RefractiveIndex[index];

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <set>
 #include "CalibFormats/CaloTPG/interface/CaloTPGTranscoder.h"
 #include "Geometry/CaloTopology/interface/HcalTopology.h"
 #include "CondFormats/HcalObjects/interface/HcalLutMetadata.h"
@@ -47,14 +48,14 @@ public:
 
   // Map different QIE to the right linearization
   static const unsigned int QIE8_OUTPUT_LUT_SIZE = REDUCE10BIT;
-  static const unsigned int QIE10_OUTPUT_LUT_SIZE = REDUCE10BIT;
+  static const unsigned int QIE10_OUTPUT_LUT_SIZE = REDUCE11BIT;
   static const unsigned int QIE11_OUTPUT_LUT_SIZE = REDUCE11BIT;
   static const unsigned int OUTPUT_LUT_SIZE = std::max({QIE8_OUTPUT_LUT_SIZE, QIE10_OUTPUT_LUT_SIZE, QIE11_OUTPUT_LUT_SIZE});
   static const unsigned int TPGMAX = 256;
 
   // Typedef
-  typedef unsigned int LUT;
-  typedef std::array<double, TPGMAX> RCTdecompression;
+  typedef uint8_t LUT;
+  typedef std::array<float, TPGMAX> RCTdecompression;
 
   const HcalTopology* theTopology;
   static const bool newHFphi = true;
@@ -77,5 +78,7 @@ public:
 
   std::vector<std::array<LUT, OUTPUT_LUT_SIZE>> outputLUT_;
   std::vector<RCTdecompression> hcaluncomp_;
+
+  std::set<HcalDetId> plan1_towers_;
 };
 #endif

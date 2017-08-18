@@ -9,5 +9,9 @@ electronGsfTracks.src = 'electronCkfTrackCandidates'
 electronGsfTracks.Propagator = 'fwdGsfElectronPropagator'
 electronGsfTracks.Fitter = 'GsfElectronFittingSmoother'
 electronGsfTracks.TTRHBuilder = 'WithTrackAngle'
-electronGsfTracks.TrajectoryInEvent = True
+electronGsfTracks.TrajectoryInEvent = False
+
+electronGsfTracksFromMultiCl = electronGsfTracks.clone(
+  src = 'electronCkfTrackCandidatesFromMultiCl'
+)
 

@@ -26,7 +26,8 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/Common/interface/ValueMap.h"
 
-#include "trackAlgoPriorityOrder.h"
+#include "RecoTracker/FinalTrackSelectors/interface/TrackAlgoPriorityOrder.h"
+#include "RecoTracker/Record/interface/CkfComponentsRecord.h"
 
 class dso_hidden TrackListMerger : public edm::stream::EDProducer<>
   {
@@ -84,6 +85,8 @@ class dso_hidden TrackListMerger : public edm::stream::EDProducer<>
     }
     std::vector<TkEDGetTokenss>      trackProducers_;
 
+    std::string priorityName_;
+
     double maxNormalizedChisq_;
     double minPT_;
     unsigned int minFound_;
@@ -124,7 +127,6 @@ class dso_hidden TrackListMerger : public edm::stream::EDProducer<>
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
@@ -295,6 +297,8 @@ TrackListMerger::TrackListMerger(edm::ParameterSet const& conf) {
   for (unsigned int i = 0; i < numTrkColl; ++i) {
     trackProducers_[i] = hasSelector_[i]>0 ? edTokens(trackProducerTags[i], selectors[i], mvaStores[i]) : edTokens(trackProducerTags[i], mvaStores[i]);
   }
+
+  priorityName_ = conf.getParameter<std::string>("trackAlgoPriorityOrder");
 }
 
 
@@ -310,6 +314,10 @@ TrackListMerger::~TrackListMerger() { }
     //es.get<TrackerDigiGeometryRecord>().get(theG);
 
     //    using namespace reco;
+
+    edm::ESHandle<TrackAlgoPriorityOrder> priorityH;
+    es.get<CkfComponentsRecord>().get(priorityName_, priorityH);
+    auto const & trackAlgoPriorityOrder = *priorityH;
 
     // get Inputs
     // if 1 input list doesn't exist, make an empty list, issue a warning, and continue
@@ -427,7 +435,7 @@ TrackListMerger::~TrackListMerger() { }
     typedef std::pair<unsigned int, const TrackingRecHit*> IHit;
     std::vector<std::vector<IHit>> rh1(ngood);  // "not an array" of vectors!
     //const TrackingRecHit*  fh1[ngood];  // first hit...
-    uint8_t algo[ngood];
+    reco::TrackBase::TrackAlgorithm algo[ngood];
     float score[ngood];
 
 
@@ -555,7 +563,7 @@ TrackListMerger::~TrackListMerger() { }
              selected[jj]=0;
              selected[ii]=10+newQualityMask; // add 10 to avoid the case where mask = 1
              trkUpdated[ii]=true;
-       	     if (trackAlgoPriorityOrder[oriAlgo[jj]] < trackAlgoPriorityOrder[oriAlgo[ii]]) oriAlgo[ii] = oriAlgo[jj];
+             if (trackAlgoPriorityOrder.priority(oriAlgo[jj]) < trackAlgoPriorityOrder.priority(oriAlgo[ii])) oriAlgo[ii] = oriAlgo[jj];
              algoMask[ii] |= algoMask[jj];
              algoMask[jj] = algoMask[ii];  // in case we keep discarded
          };
@@ -572,7 +580,7 @@ TrackListMerger::~TrackListMerger() { }
 	      if ((trackQuals[j] & (1<<reco::TrackBase::loose|1<<reco::TrackBase::tight|1<<reco::TrackBase::highPurity) ) ==
 		  (trackQuals[i] & (1<<reco::TrackBase::loose|1<<reco::TrackBase::tight|1<<reco::TrackBase::highPurity) )) {
 		//same quality, pick earlier algo
-		if (trackAlgoPriorityOrder[algo[k1]] <= trackAlgoPriorityOrder[algo[k2]]) {
+		if (trackAlgoPriorityOrder.priority(algo[k1]) <= trackAlgoPriorityOrder.priority(algo[k2])) {
                   seti(i,j);    
 		} else {
                   seti(j,i);    
@@ -775,6 +783,8 @@ TrackListMerger::~TrackListMerger() { }
 	// fill TrackingRecHits
 	unsigned nh1=track->recHitsSize();
         tx.setHits(refTrkHits,outputTrkHits->size(),nh1);
+        tx.setTrajParams(track->extra()->trajParams(),track->extra()->chi2sX5());
+        assert(tx.trajParams().size()==tx.recHitsSize());
         for (auto hh = track->recHitsBegin(), eh=track->recHitsEnd(); hh!=eh; ++hh ) {
           outputTrkHits->push_back( (*hh)->clone() );
         }

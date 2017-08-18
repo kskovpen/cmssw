@@ -21,52 +21,71 @@
 #include "TMath.h"
 #include "DQM/TrackingMonitor/interface/GetLumi.h"
 
+using namespace dqm;
+
+namespace {
+  template <typename T, size_t N>
+  std::array<T, N+1> makeLogBins(const double min, const double max) {
+    const double minLog10 = std::log10(min);
+    const double maxLog10 = std::log10(max);
+    const double width = (maxLog10-minLog10)/N;
+    std::array<T, N+1> ret;
+    ret[0] = std::pow(10,minLog10);
+    const double mult = std::pow(10, width);
+    for(size_t i=1; i<= N; ++i) {
+      ret[i] = ret[i-1]*mult;
+    }
+    return ret;
+  }
+}
+
 TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig) 
-    : conf_( iConfig )
-    , doTrackerSpecific_               ( conf_.getParameter<bool>("doTrackerSpecific") )
-    , doAllPlots_                      ( conf_.getParameter<bool>("doAllPlots") )
-    , doBSPlots_                       ( conf_.getParameter<bool>("doBeamSpotPlots") )
-    , doPVPlots_                       ( conf_.getParameter<bool>("doPrimaryVertexPlots") )
-    , doDCAPlots_                      ( conf_.getParameter<bool>("doDCAPlots") )
-    , doGeneralPropertiesPlots_        ( conf_.getParameter<bool>("doGeneralPropertiesPlots") )
-    , doMeasurementStatePlots_         ( conf_.getParameter<bool>("doMeasurementStatePlots") )
-    , doHitPropertiesPlots_            ( conf_.getParameter<bool>("doHitPropertiesPlots") )
-    , doRecHitVsPhiVsEtaPerTrack_      ( conf_.getParameter<bool>("doRecHitVsPhiVsEtaPerTrack") )
-    , doRecHitVsPtVsEtaPerTrack_       ( conf_.getParameter<bool>("doRecHitVsPtVsEtaPerTrack") )
-    , doLayersVsPhiVsEtaPerTrack_      ( conf_.getParameter<bool>("doLayersVsPhiVsEtaPerTrack") )
-    , doRecHitsPerTrackProfile_        ( conf_.getParameter<bool>("doRecHitsPerTrackProfile") )
-    , doThetaPlots_                    ( conf_.getParameter<bool>("doThetaPlots") )
-    , doTrackPxPyPlots_                ( conf_.getParameter<bool>("doTrackPxPyPlots") )
-    , doDCAwrtPVPlots_                 ( conf_.getParameter<bool>("doDCAwrtPVPlots") )
-    , doDCAwrt000Plots_                ( conf_.getParameter<bool>("doDCAwrt000Plots") )
-    , doLumiAnalysis_                  ( conf_.getParameter<bool>("doLumiAnalysis") )
-    , doTestPlots_                     ( conf_.getParameter<bool>("doTestPlots") )
-    , doHIPlots_                       ( conf_.getParameter<bool>("doHIPlots")  )
-    , doSIPPlots_                      ( conf_.getParameter<bool>("doSIPPlots") )
-    , doEffFromHitPatternVsPU_         ( conf_.getParameter<bool>("doEffFromHitPatternVsPU")   )
-    , doEffFromHitPatternVsBX_         ( conf_.getParameter<bool>("doEffFromHitPatternVsBX")   )
-    , doEffFromHitPatternVsLUMI_       ( conf_.getParameter<bool>("doEffFromHitPatternVsLUMI") )
-    , pvNDOF_                          ( conf_.getParameter<int> ("pvNDOF") )
-    , useBPixLayer1_                   ( conf_.getParameter<bool>("useBPixLayer1") )
-    , minNumberOfPixelsPerCluster_     ( conf_.getParameter<int>("minNumberOfPixelsPerCluster") )
-    , minPixelClusterCharge_           ( conf_.getParameter<double>("minPixelClusterCharge") )
-    , qualityString_                   ( conf_.getParameter<std::string>("qualityString"))
+    : conf_( nullptr )
+    , stateName_                       (iConfig.getParameter<std::string>("MeasurementState") )
+    , doTrackerSpecific_               ( iConfig.getParameter<bool>("doTrackerSpecific") )
+    , doAllPlots_                      ( iConfig.getParameter<bool>("doAllPlots") )
+    , doBSPlots_                       ( iConfig.getParameter<bool>("doBeamSpotPlots") )
+    , doPVPlots_                       ( iConfig.getParameter<bool>("doPrimaryVertexPlots") )
+    , doDCAPlots_                      ( iConfig.getParameter<bool>("doDCAPlots") )
+    , doGeneralPropertiesPlots_        ( iConfig.getParameter<bool>("doGeneralPropertiesPlots") )
+    , doMeasurementStatePlots_         ( iConfig.getParameter<bool>("doMeasurementStatePlots") )
+    , doHitPropertiesPlots_            ( iConfig.getParameter<bool>("doHitPropertiesPlots") )
+    , doRecHitVsPhiVsEtaPerTrack_      ( iConfig.getParameter<bool>("doRecHitVsPhiVsEtaPerTrack") )
+    , doRecHitVsPtVsEtaPerTrack_       ( iConfig.getParameter<bool>("doRecHitVsPtVsEtaPerTrack") )
+    , doLayersVsPhiVsEtaPerTrack_      ( iConfig.getParameter<bool>("doLayersVsPhiVsEtaPerTrack") )
+    , doRecHitsPerTrackProfile_        ( iConfig.getParameter<bool>("doRecHitsPerTrackProfile") )
+    , doThetaPlots_                    ( iConfig.getParameter<bool>("doThetaPlots") )
+    , doTrackPxPyPlots_                ( iConfig.getParameter<bool>("doTrackPxPyPlots") )
+    , doDCAwrtPVPlots_                 ( iConfig.getParameter<bool>("doDCAwrtPVPlots") )
+    , doDCAwrt000Plots_                ( iConfig.getParameter<bool>("doDCAwrt000Plots") )
+    , doLumiAnalysis_                  ( iConfig.getParameter<bool>("doLumiAnalysis") )
+    , doTestPlots_                     ( iConfig.getParameter<bool>("doTestPlots") )
+    , doHIPlots_                       ( iConfig.getParameter<bool>("doHIPlots")  )
+    , doSIPPlots_                      ( iConfig.getParameter<bool>("doSIPPlots") )
+    , doEffFromHitPatternVsPU_         ( iConfig.getParameter<bool>("doEffFromHitPatternVsPU")   )
+    , doEffFromHitPatternVsBX_         ( iConfig.getParameter<bool>("doEffFromHitPatternVsBX")   )
+    , doEffFromHitPatternVsLUMI_       ( iConfig.getParameter<bool>("doEffFromHitPatternVsLUMI") )
+    , pvNDOF_                          ( iConfig.getParameter<int> ("pvNDOF") )
+    , useBPixLayer1_                   ( iConfig.getParameter<bool>("useBPixLayer1") )
+    , minNumberOfPixelsPerCluster_     ( iConfig.getParameter<int>("minNumberOfPixelsPerCluster") )
+    , minPixelClusterCharge_           ( iConfig.getParameter<double>("minPixelClusterCharge") )
+    , qualityString_                   ( iConfig.getParameter<std::string>("qualityString"))
     , good_vertices_(0)
     , bx_(0)
     , pixel_lumi_(0.)
     , scal_lumi_(0.)
 {
   initHistos();
-  TopFolder_ = conf_.getParameter<std::string>("FolderName"); 
+  TopFolder_ = iConfig.getParameter<std::string>("FolderName"); 
 }
 
 TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig, edm::ConsumesCollector& iC) 
   : TrackAnalyzer(iConfig)
 {
-  edm::InputTag bsSrc                 = conf_.getParameter<edm::InputTag>("beamSpot");
-  edm::InputTag primaryVertexInputTag = conf_.getParameter<edm::InputTag>("primaryVertex");
-  edm::InputTag pixelClusterInputTag  = conf_.getParameter<edm::InputTag>("pixelCluster4lumi");
-  edm::InputTag scalInputTag          = conf_.getParameter<edm::InputTag>("scal");
+  edm::InputTag bsSrc                 = iConfig.getParameter<edm::InputTag>("beamSpot");
+  edm::InputTag primaryVertexInputTag = iConfig.getParameter<edm::InputTag>("primaryVertex");
+  edm::InputTag pixelClusterInputTag  = iConfig.getParameter<edm::InputTag>("pixelCluster4lumi");
+  edm::InputTag scalInputTag          = iConfig.getParameter<edm::InputTag>("scal");
   beamSpotToken_      = iC.consumes<reco::BeamSpot>(bsSrc);
   pvToken_            = iC.consumes<reco::VertexCollection>(primaryVertexInputTag);
   pixelClustersToken_ = iC.mayConsume<edmNew::DetSetVector<SiPixelCluster> >(pixelClusterInputTag);
@@ -107,9 +126,12 @@ void TrackAnalyzer::initHistos()
   DistanceOfClosestApproach = nullptr;
   DistanceOfClosestApproachToBS = nullptr;
   AbsDistanceOfClosestApproachToBS = nullptr;
+  DistanceOfClosestApproachToPV = nullptr;
+  DeltaZToPV = nullptr;
   DistanceOfClosestApproachVsTheta = nullptr;
-  DistanceOfClosestApproachVsPhi = nullptr;
+  DistanceOfClosestApproachVsPhi = nullptr;  
   DistanceOfClosestApproachToBSVsPhi = nullptr;
+  DistanceOfClosestApproachToPVVsPhi = nullptr;
   DistanceOfClosestApproachVsEta = nullptr;
   xPointOfClosestApproach = nullptr;
   xPointOfClosestApproachVsZ0wrt000 = nullptr;
@@ -157,9 +179,9 @@ TrackAnalyzer::~TrackAnalyzer()
 { 
 }
 
-void TrackAnalyzer::initHisto(DQMStore::IBooker & ibooker, const edm::EventSetup & iSetup)
+void TrackAnalyzer::initHisto(DQMStore::IBooker & ibooker, const edm::EventSetup & iSetup, const edm::ParameterSet& iConfig)
 {
-
+  conf_ = &iConfig;
   bookHistosForHitProperties(ibooker);
   bookHistosForBeamSpot(ibooker);
   bookHistosForLScertification( ibooker);
@@ -176,24 +198,23 @@ void TrackAnalyzer::initHisto(DQMStore::IBooker & ibooker, const edm::EventSetup
   // ---------------------------------------------------------------------------------//
   if (doMeasurementStatePlots_ || doAllPlots_) {
 
-    std::string StateName = conf_.getParameter<std::string>("MeasurementState");
     
-    if (StateName == "All") {
+    if (stateName_ == "All") {
       bookHistosForState("OuterSurface", ibooker);
       bookHistosForState("InnerSurface", ibooker);
       bookHistosForState("ImpactPoint" , ibooker);
     } else if (
-	       StateName != "OuterSurface" && 
-	       StateName != "InnerSurface" && 
-	       StateName != "ImpactPoint" &&
-	       StateName != "default" 
+	       stateName_ != "OuterSurface" && 
+	       stateName_ != "InnerSurface" && 
+	       stateName_ != "ImpactPoint" &&
+	       stateName_ != "default" 
 	       ) {
       bookHistosForState("default", ibooker);
 
     } else {
-      bookHistosForState(StateName, ibooker);
+      bookHistosForState(stateName_, ibooker);
     }
-    
+    conf_ = nullptr;
   }
 }
 
@@ -204,23 +225,27 @@ void TrackAnalyzer::bookHistosForEfficiencyFromHitPatter(DQMStore::IBooker &iboo
 
     ibooker.setCurrentFolder(TopFolder_ + "/HitEffFromHitPattern" + suffix);
     
-    int LUMIBin   = conf_.getParameter<int>("LUMIBin");
-    float LUMIMin = conf_.getParameter<double>("LUMIMin");
-    float LUMIMax = conf_.getParameter<double>("LUMIMax");
+    constexpr int LUMIBin   = 300;   // conf_->getParameter<int>("LUMIBin");
+    float LUMIMin = conf_->getParameter<double>("LUMIMin");
+    float LUMIMax = conf_->getParameter<double>("LUMIMax");
     
 
-    int NBINS[]        = { 50,   int(GetLumi::lastBunchCrossing),  300  , LUMIBin};
-    float MIN[]        = { 0.5,     0.5,  0., LUMIMin };
-    float MAX[]        = { 50.5, float(GetLumi::lastBunchCrossing)+0.5,  3., LUMIMax };
+    int NBINS[]        = { 60,   int(GetLumi::lastBunchCrossing),  LUMIBin, LUMIBin};
+    float MIN[]        = { 0.5,     0.5,  LUMIMin, LUMIMin };
+    float MAX[]        = { 60.5, float(GetLumi::lastBunchCrossing)+0.5,  LUMIMax, LUMIMax };
     std::string NAME[] = { "", "VsBX", "VsLUMI", "VsLUMI" };
-    
+   
+    auto logBins = makeLogBins<float,LUMIBin>(LUMIMin,LUMIMax);
+ 
     int mon = -1;
     int nbins = -1;
     float min = -1.;
     float max = -1.;
+    bool logQ = false;
     std::string name = "";
     for (int i=0; i<monQuantity::END; i++) {
       if (monName[i] == suffix) {
+        logQ =  (i>1); 
 	mon = i;
 	nbins = NBINS[i];
 	min = MIN[i];
@@ -254,27 +279,14 @@ void TrackAnalyzer::bookHistosForEfficiencyFromHitPatter(DQMStore::IBooker &iboo
           switch(cat) {
             case 0:
               hits_valid_.insert(std::make_pair(
-		  Key(det, sub_det, mon),
+		  Key(det, sub_det, mon), logQ? 
+                  ibooker.book1D(title, title, nbins, &logBins[0]) :
 		  ibooker.book1D(title, title, nbins, min, max)));
-              break;
-            case 1:
-              hits_missing_.insert(std::make_pair(
-		  Key(det, sub_det, mon),
-                  ibooker.book1D(title, title, nbins, min, max)));
-              break;
-            case 2:
-              hits_inactive_.insert(std::make_pair(
-		  Key(det, sub_det, mon),
-                  ibooker.book1D(title, title, nbins, min, max)));
-              break;
-            case 3:
-              hits_bad_.insert(std::make_pair(
-		  Key(det, sub_det, mon),
-                  ibooker.book1D(title, title, nbins, min, max)));
               break;
             case 4:
               hits_total_.insert(std::make_pair(
-		  Key(det, sub_det, mon),
+		  Key(det, sub_det, mon), logQ?	
+                  ibooker.book1D(title, title, nbins, &logBins[0]) :
                   ibooker.book1D(title, title, nbins, min, max)));
               break;
             default:
@@ -289,49 +301,49 @@ void TrackAnalyzer::bookHistosForEfficiencyFromHitPatter(DQMStore::IBooker &iboo
 void TrackAnalyzer::bookHistosForHitProperties(DQMStore::IBooker & ibooker) {
   
     // parameters from the configuration
-    std::string QualName       = conf_.getParameter<std::string>("Quality");
-    std::string AlgoName       = conf_.getParameter<std::string>("AlgoName");
-    std::string MEBSFolderName = conf_.getParameter<std::string>("BSFolderName"); 
+    std::string QualName       = conf_->getParameter<std::string>("Quality");
+    std::string AlgoName       = conf_->getParameter<std::string>("AlgoName");
+    std::string MEBSFolderName = conf_->getParameter<std::string>("BSFolderName"); 
 
     // use the AlgoName and Quality Name 
     std::string CategoryName = QualName != "" ? AlgoName + "_" + QualName : AlgoName;
 
     // get binning from the configuration
-    int    TKHitBin     = conf_.getParameter<int>(   "RecHitBin");
-    double TKHitMin     = conf_.getParameter<double>("RecHitMin");
-    double TKHitMax     = conf_.getParameter<double>("RecHitMax");
+    int    TKHitBin     = conf_->getParameter<int>(   "RecHitBin");
+    double TKHitMin     = conf_->getParameter<double>("RecHitMin");
+    double TKHitMax     = conf_->getParameter<double>("RecHitMax");
 
-    int    TKLostBin    = conf_.getParameter<int>(   "RecLostBin");
-    double TKLostMin    = conf_.getParameter<double>("RecLostMin");
-    double TKLostMax    = conf_.getParameter<double>("RecLostMax");
+    int    TKLostBin    = conf_->getParameter<int>(   "RecLostBin");
+    double TKLostMin    = conf_->getParameter<double>("RecLostMin");
+    double TKLostMax    = conf_->getParameter<double>("RecLostMax");
 
-    int    TKLayBin     = conf_.getParameter<int>(   "RecLayBin");
-    double TKLayMin     = conf_.getParameter<double>("RecLayMin");
-    double TKLayMax     = conf_.getParameter<double>("RecLayMax");
+    int    TKLayBin     = conf_->getParameter<int>(   "RecLayBin");
+    double TKLayMin     = conf_->getParameter<double>("RecLayMin");
+    double TKLayMax     = conf_->getParameter<double>("RecLayMax");
 
-    int    PhiBin       = conf_.getParameter<int>(   "PhiBin");
-    double PhiMin       = conf_.getParameter<double>("PhiMin");
-    double PhiMax       = conf_.getParameter<double>("PhiMax");
+    int    PhiBin       = conf_->getParameter<int>(   "PhiBin");
+    double PhiMin       = conf_->getParameter<double>("PhiMin");
+    double PhiMax       = conf_->getParameter<double>("PhiMax");
 
-    int    EtaBin       = conf_.getParameter<int>(   "EtaBin");
-    double EtaMin       = conf_.getParameter<double>("EtaMin");
-    double EtaMax       = conf_.getParameter<double>("EtaMax");
+    int    EtaBin       = conf_->getParameter<int>(   "EtaBin");
+    double EtaMin       = conf_->getParameter<double>("EtaMin");
+    double EtaMax       = conf_->getParameter<double>("EtaMax");
 
-    int    PtBin = conf_.getParameter<int>(   "TrackPtBin");
-    double PtMin = conf_.getParameter<double>("TrackPtMin");
-    double PtMax = conf_.getParameter<double>("TrackPtMax");
+    int    PtBin = conf_->getParameter<int>(   "TrackPtBin");
+    double PtMin = conf_->getParameter<double>("TrackPtMin");
+    double PtMax = conf_->getParameter<double>("TrackPtMax");
 
-    int    VXBin        = conf_.getParameter<int>(   "VXBin");
-    double VXMin        = conf_.getParameter<double>("VXMin");
-    double VXMax        = conf_.getParameter<double>("VXMax");
+    int    VXBin        = conf_->getParameter<int>(   "VXBin");
+    double VXMin        = conf_->getParameter<double>("VXMin");
+    double VXMax        = conf_->getParameter<double>("VXMax");
 
-    int    VYBin        = conf_.getParameter<int>(   "VYBin");
-    double VYMin        = conf_.getParameter<double>("VYMin");
-    double VYMax        = conf_.getParameter<double>("VYMax");
+    int    VYBin        = conf_->getParameter<int>(   "VYBin");
+    double VYMin        = conf_->getParameter<double>("VYMin");
+    double VYMax        = conf_->getParameter<double>("VYMax");
 
-    int    VZBin        = conf_.getParameter<int>(   "VZBin");
-    double VZMin        = conf_.getParameter<double>("VZMin");
-    double VZMax        = conf_.getParameter<double>("VZMax");
+    int    VZBin        = conf_->getParameter<int>(   "VZBin");
+    double VZMin        = conf_->getParameter<double>("VZMin");
+    double VZMax        = conf_->getParameter<double>("VZMax");
 
     ibooker.setCurrentFolder(TopFolder_);
 
@@ -351,6 +363,7 @@ void TrackAnalyzer::bookHistosForHitProperties(DQMStore::IBooker & ibooker) {
       histname = "NumberOfValidRecHitsPerTrack_";
       NumberOfValidRecHitsPerTrack = ibooker.book1D(histname+CategoryName, histname+CategoryName, TKHitBin, TKHitMin, TKHitMax);
       NumberOfValidRecHitsPerTrack->setAxisTitle("Number of valid RecHits for each Track");
+
       NumberOfValidRecHitsPerTrack->setAxisTitle("Number of Tracks", 2);
 
       histname = "NumberOfLostRecHitsPerTrack_";
@@ -482,27 +495,27 @@ void TrackAnalyzer::bookHistosForHitProperties(DQMStore::IBooker & ibooker) {
     
     if (doGeneralPropertiesPlots_ || doAllPlots_){
       
-      int    Chi2Bin      = conf_.getParameter<int>(   "Chi2Bin");
-      double Chi2Min      = conf_.getParameter<double>("Chi2Min");
-      double Chi2Max      = conf_.getParameter<double>("Chi2Max");
+      int    Chi2Bin      = conf_->getParameter<int>(   "Chi2Bin");
+      double Chi2Min      = conf_->getParameter<double>("Chi2Min");
+      double Chi2Max      = conf_->getParameter<double>("Chi2Max");
       
-      int    Chi2NDFBin   = conf_.getParameter<int>(   "Chi2NDFBin");
-      double Chi2NDFMin   = conf_.getParameter<double>("Chi2NDFMin");
-      double Chi2NDFMax   = conf_.getParameter<double>("Chi2NDFMax");
+      int    Chi2NDFBin   = conf_->getParameter<int>(   "Chi2NDFBin");
+      double Chi2NDFMin   = conf_->getParameter<double>("Chi2NDFMin");
+      double Chi2NDFMax   = conf_->getParameter<double>("Chi2NDFMax");
       
-      int    Chi2ProbBin  = conf_.getParameter<int>(   "Chi2ProbBin");
-      double Chi2ProbMin  = conf_.getParameter<double>("Chi2ProbMin");
-      double Chi2ProbMax  = conf_.getParameter<double>("Chi2ProbMax");
+      int    Chi2ProbBin  = conf_->getParameter<int>(   "Chi2ProbBin");
+      double Chi2ProbMin  = conf_->getParameter<double>("Chi2ProbMin");
+      double Chi2ProbMax  = conf_->getParameter<double>("Chi2ProbMax");
     
 
       //HI PLOTS////                                                       
-      int TransDCABins = conf_.getParameter<int>("TransDCABins");
-      double TransDCAMin = conf_.getParameter<double>("TransDCAMin");
-      double TransDCAMax = conf_.getParameter<double>("TransDCAMax");
+      int TransDCABins = conf_->getParameter<int>("TransDCABins");
+      double TransDCAMin = conf_->getParameter<double>("TransDCAMin");
+      double TransDCAMax = conf_->getParameter<double>("TransDCAMax");
 
-      int LongDCABins = conf_.getParameter<int>("LongDCABins");
-      double LongDCAMin = conf_.getParameter<double>("LongDCAMin");
-      double LongDCAMax = conf_.getParameter<double>("LongDCAMax");
+      int LongDCABins = conf_->getParameter<int>("LongDCABins");
+      double LongDCAMin = conf_->getParameter<double>("LongDCAMin");
+      double LongDCAMax = conf_->getParameter<double>("LongDCAMax");
       ///////////////////////////////////////////////////////////////////  
 
 
@@ -658,8 +671,8 @@ void TrackAnalyzer::bookHistosForHitProperties(DQMStore::IBooker & ibooker) {
 void TrackAnalyzer::bookHistosForLScertification(DQMStore::IBooker & ibooker) {
 
     // parameters from the configuration
-    std::string QualName       = conf_.getParameter<std::string>("Quality");
-    std::string AlgoName       = conf_.getParameter<std::string>("AlgoName");
+    std::string QualName       = conf_->getParameter<std::string>("Quality");
+    std::string AlgoName       = conf_->getParameter<std::string>("AlgoName");
 
     // use the AlgoName and Quality Name 
     std::string CategoryName = QualName != "" ? AlgoName + "_" + QualName : AlgoName;
@@ -670,13 +683,13 @@ void TrackAnalyzer::bookHistosForLScertification(DQMStore::IBooker & ibooker) {
     if ( doLumiAnalysis_ ) {
 
       // get binning from the configuration
-      int    TKHitBin     = conf_.getParameter<int>(   "RecHitBin");
-      double TKHitMin     = conf_.getParameter<double>("RecHitMin");
-      double TKHitMax     = conf_.getParameter<double>("RecHitMax");
+      int    TKHitBin     = conf_->getParameter<int>(   "RecHitBin");
+      double TKHitMin     = conf_->getParameter<double>("RecHitMin");
+      double TKHitMax     = conf_->getParameter<double>("RecHitMax");
 
-      int    Chi2NDFBin   = conf_.getParameter<int>(   "Chi2NDFBin");
-      double Chi2NDFMin   = conf_.getParameter<double>("Chi2NDFMin");
-      double Chi2NDFMax   = conf_.getParameter<double>("Chi2NDFMax");
+      int    Chi2NDFBin   = conf_->getParameter<int>(   "Chi2NDFBin");
+      double Chi2NDFMin   = conf_->getParameter<double>("Chi2NDFMin");
+      double Chi2NDFMax   = conf_->getParameter<double>("Chi2NDFMax");
 
       // add by Mia in order to deal w/ LS transitions  
       ibooker.setCurrentFolder(TopFolder_+"/LSanalysis");
@@ -697,8 +710,8 @@ void TrackAnalyzer::bookHistosForLScertification(DQMStore::IBooker & ibooker) {
 void TrackAnalyzer::bookHistosForBeamSpot(DQMStore::IBooker & ibooker) {
 
     // parameters from the configuration
-    std::string QualName       = conf_.getParameter<std::string>("Quality");
-    std::string AlgoName       = conf_.getParameter<std::string>("AlgoName");
+    std::string QualName       = conf_->getParameter<std::string>("Quality");
+    std::string AlgoName       = conf_->getParameter<std::string>("AlgoName");
 
     // use the AlgoName and Quality Name 
     std::string CategoryName = QualName != "" ? AlgoName + "_" + QualName : AlgoName;
@@ -708,33 +721,33 @@ void TrackAnalyzer::bookHistosForBeamSpot(DQMStore::IBooker & ibooker) {
     
     if(doDCAPlots_ || doBSPlots_ || doAllPlots_) {
 	
-      int    DxyBin       = conf_.getParameter<int>(   "DxyBin");
-      double DxyMin       = conf_.getParameter<double>("DxyMin");
-      double DxyMax       = conf_.getParameter<double>("DxyMax");
+      int    DxyBin       = conf_->getParameter<int>(   "DxyBin");
+      double DxyMin       = conf_->getParameter<double>("DxyMin");
+      double DxyMax       = conf_->getParameter<double>("DxyMax");
       
-      int    AbsDxyBin    = conf_.getParameter<int>(   "AbsDxyBin");
-      double AbsDxyMin    = conf_.getParameter<double>("AbsDxyMin");
-      double AbsDxyMax    = conf_.getParameter<double>("AbsDxyMax");
+      int    AbsDxyBin    = conf_->getParameter<int>(   "AbsDxyBin");
+      double AbsDxyMin    = conf_->getParameter<double>("AbsDxyMin");
+      double AbsDxyMax    = conf_->getParameter<double>("AbsDxyMax");
       
-      int    PhiBin     = conf_.getParameter<int>(   "PhiBin");
-      double PhiMin     = conf_.getParameter<double>("PhiMin");
-      double PhiMax     = conf_.getParameter<double>("PhiMax");
+      int    PhiBin     = conf_->getParameter<int>(   "PhiBin");
+      double PhiMin     = conf_->getParameter<double>("PhiMin");
+      double PhiMax     = conf_->getParameter<double>("PhiMax");
       
-      int    X0Bin        = conf_.getParameter<int>(   "X0Bin");
-      double X0Min        = conf_.getParameter<double>("X0Min");
-      double X0Max        = conf_.getParameter<double>("X0Max");
+      int    X0Bin        = conf_->getParameter<int>(   "X0Bin");
+      double X0Min        = conf_->getParameter<double>("X0Min");
+      double X0Max        = conf_->getParameter<double>("X0Max");
       
-      int    Y0Bin        = conf_.getParameter<int>(   "Y0Bin");
-      double Y0Min        = conf_.getParameter<double>("Y0Min");
-      double Y0Max        = conf_.getParameter<double>("Y0Max");
+      int    Y0Bin        = conf_->getParameter<int>(   "Y0Bin");
+      double Y0Min        = conf_->getParameter<double>("Y0Min");
+      double Y0Max        = conf_->getParameter<double>("Y0Max");
       
-      int    Z0Bin        = conf_.getParameter<int>(   "Z0Bin");
-      double Z0Min        = conf_.getParameter<double>("Z0Min");
-      double Z0Max        = conf_.getParameter<double>("Z0Max");
+      int    Z0Bin        = conf_->getParameter<int>(   "Z0Bin");
+      double Z0Min        = conf_->getParameter<double>("Z0Min");
+      double Z0Max        = conf_->getParameter<double>("Z0Max");
       
-      int    VZBinProf    = conf_.getParameter<int>(   "VZBinProf");
-      double VZMinProf    = conf_.getParameter<double>("VZMinProf");
-      double VZMaxProf    = conf_.getParameter<double>("VZMaxProf");
+      int    VZBinProf    = conf_->getParameter<int>(   "VZBinProf");
+      double VZMinProf    = conf_->getParameter<double>("VZMinProf");
+      double VZMaxProf    = conf_->getParameter<double>("VZMaxProf");
       
       
       ibooker.setCurrentFolder(TopFolder_+"/GeneralProperties");
@@ -783,47 +796,52 @@ void TrackAnalyzer::bookHistosForBeamSpot(DQMStore::IBooker & ibooker) {
     
     if(doDCAPlots_ || doPVPlots_ || doAllPlots_) {
       
-      int    DxyBin       = conf_.getParameter<int>(   "DxyBin");
-      double DxyMin       = conf_.getParameter<double>("DxyMin");
-      double DxyMax       = conf_.getParameter<double>("DxyMax");
+      int    DxyBin       = conf_->getParameter<int>(   "DxyBin");
+      double DxyMin       = conf_->getParameter<double>("DxyMin");
+      double DxyMax       = conf_->getParameter<double>("DxyMax");
       
-      int    PhiBin     = conf_.getParameter<int>(   "PhiBin");
-      double PhiMin     = conf_.getParameter<double>("PhiMin");
-      double PhiMax     = conf_.getParameter<double>("PhiMax");
+      int    PhiBin     = conf_->getParameter<int>(   "PhiBin");
+      double PhiMin     = conf_->getParameter<double>("PhiMin");
+      double PhiMax     = conf_->getParameter<double>("PhiMax");
       
-      int    X0Bin        = conf_.getParameter<int>(   "X0Bin");
-      double X0Min        = conf_.getParameter<double>("X0Min");
-      double X0Max        = conf_.getParameter<double>("X0Max");
+      int    X0Bin        = conf_->getParameter<int>(   "X0Bin");
+      double X0Min        = conf_->getParameter<double>("X0Min");
+      double X0Max        = conf_->getParameter<double>("X0Max");
       
-      int    Y0Bin        = conf_.getParameter<int>(   "Y0Bin");
-      double Y0Min        = conf_.getParameter<double>("Y0Min");
-      double Y0Max        = conf_.getParameter<double>("Y0Max");
+      int    Y0Bin        = conf_->getParameter<int>(   "Y0Bin");
+      double Y0Min        = conf_->getParameter<double>("Y0Min");
+      double Y0Max        = conf_->getParameter<double>("Y0Max");
       
-      int    Z0Bin        = conf_.getParameter<int>(   "Z0Bin");
-      double Z0Min        = conf_.getParameter<double>("Z0Min");
-      double Z0Max        = conf_.getParameter<double>("Z0Max");
+      int    Z0Bin        = conf_->getParameter<int>(   "Z0Bin");
+      double Z0Min        = conf_->getParameter<double>("Z0Min");
+      double Z0Max        = conf_->getParameter<double>("Z0Max");
       
       ibooker.setCurrentFolder(TopFolder_+"/GeneralProperties");
       
       histname = "DistanceOfClosestApproachToPV_";
       DistanceOfClosestApproachToPV = ibooker.book1D(histname+CategoryName,histname+CategoryName,DxyBin,DxyMin,DxyMax);
-      DistanceOfClosestApproachToPV->setAxisTitle("Track d_{xy} wrt beam spot (cm)",1);
+      DistanceOfClosestApproachToPV->setAxisTitle("Track d_{xy} w.r.t. PV (cm)",1);
       DistanceOfClosestApproachToPV->setAxisTitle("Number of Tracks",2);
+      
+      histname = "DeltaZToPV_";
+      DeltaZToPV = ibooker.book1D(histname+CategoryName,histname+CategoryName,Z0Bin,Z0Min,Z0Max);
+      DeltaZToPV->setAxisTitle("Track d_{z} w.r.t. PV (cm)",1);
+      DeltaZToPV->setAxisTitle("Number of Tracks",2);
       
       histname = "DistanceOfClosestApproachToPVVsPhi_";
       DistanceOfClosestApproachToPVVsPhi = ibooker.bookProfile(histname+CategoryName,histname+CategoryName, PhiBin, PhiMin, PhiMax, DxyBin, DxyMin, DxyMax,"");
       DistanceOfClosestApproachToPVVsPhi->getTH1()->SetCanExtend(TH1::kAllAxes);
       DistanceOfClosestApproachToPVVsPhi->setAxisTitle("Track #phi",1);
-      DistanceOfClosestApproachToPVVsPhi->setAxisTitle("Track d_{xy} wrt beam spot (cm)",2);
+      DistanceOfClosestApproachToPVVsPhi->setAxisTitle("Track d_{xy} w.r.t. PV (cm)",2);
       
       histname = "xPointOfClosestApproachVsZ0wrtPV_";
       xPointOfClosestApproachVsZ0wrtPV = ibooker.bookProfile(histname+CategoryName, histname+CategoryName, Z0Bin, Z0Min, Z0Max, X0Bin, X0Min, X0Max,"");
-      xPointOfClosestApproachVsZ0wrtPV->setAxisTitle("d_{z} w.r.t. Beam Spot  (cm)",1);
+      xPointOfClosestApproachVsZ0wrtPV->setAxisTitle("d_{z} w.r.t. PV (cm)",1);
       xPointOfClosestApproachVsZ0wrtPV->setAxisTitle("x component of Track PCA to PV (cm)",2);
       
       histname = "yPointOfClosestApproachVsZ0wrtPV_";
       yPointOfClosestApproachVsZ0wrtPV = ibooker.bookProfile(histname+CategoryName, histname+CategoryName, Z0Bin, Z0Min, Z0Max, Y0Bin, Y0Min, Y0Max,"");
-      yPointOfClosestApproachVsZ0wrtPV->setAxisTitle("d_{z} w.r.t. Beam Spot (cm)",1);
+      yPointOfClosestApproachVsZ0wrtPV->setAxisTitle("d_{z} w.r.t. PV (cm)",1);
       yPointOfClosestApproachVsZ0wrtPV->setAxisTitle("y component of Track PCA to PV (cm)",2);
       
     }
@@ -831,13 +849,13 @@ void TrackAnalyzer::bookHistosForBeamSpot(DQMStore::IBooker & ibooker) {
     if (doBSPlots_ || doAllPlots_) {
       if (doTestPlots_) {
 	
-	int    DxyBin       = conf_.getParameter<int>(   "DxyBin");
-	double DxyMin       = conf_.getParameter<double>("DxyMin");
-	double DxyMax       = conf_.getParameter<double>("DxyMax");
+	int    DxyBin       = conf_->getParameter<int>(   "DxyBin");
+	double DxyMin       = conf_->getParameter<double>("DxyMin");
+	double DxyMax       = conf_->getParameter<double>("DxyMax");
       
-	int    PhiBin     = conf_.getParameter<int>(   "PhiBin");
-	double PhiMin     = conf_.getParameter<double>("PhiMin");
-	double PhiMax     = conf_.getParameter<double>("PhiMax");
+	int    PhiBin     = conf_->getParameter<int>(   "PhiBin");
+	double PhiMin     = conf_->getParameter<double>("PhiMin");
+	double PhiMax     = conf_->getParameter<double>("PhiMax");
 
 	histname = "TESTDistanceOfClosestApproachToBS_";
 	TESTDistanceOfClosestApproachToBS = ibooker.book1D(histname+CategoryName,histname+CategoryName,DxyBin,DxyMin,DxyMax);
@@ -860,22 +878,22 @@ void TrackAnalyzer::bookHistosForBeamSpot(DQMStore::IBooker & ibooker) {
 
       if (doDCAwrt000Plots_) {
 
-	int    EtaBin     = conf_.getParameter<int>(   "EtaBin");
-	double EtaMin     = conf_.getParameter<double>("EtaMin");
-	double EtaMax     = conf_.getParameter<double>("EtaMax");
+	int    EtaBin     = conf_->getParameter<int>(   "EtaBin");
+	double EtaMin     = conf_->getParameter<double>("EtaMin");
+	double EtaMax     = conf_->getParameter<double>("EtaMax");
 	
-	int    PhiBin     = conf_.getParameter<int>(   "PhiBin");
-	double PhiMin     = conf_.getParameter<double>("PhiMin");
-	double PhiMax     = conf_.getParameter<double>("PhiMax");
+	int    PhiBin     = conf_->getParameter<int>(   "PhiBin");
+	double PhiMin     = conf_->getParameter<double>("PhiMin");
+	double PhiMax     = conf_->getParameter<double>("PhiMax");
 
-	int    DxyBin       = conf_.getParameter<int>(   "DxyBin");
-	double DxyMin       = conf_.getParameter<double>("DxyMin");
-	double DxyMax       = conf_.getParameter<double>("DxyMax");
+	int    DxyBin       = conf_->getParameter<int>(   "DxyBin");
+	double DxyMin       = conf_->getParameter<double>("DxyMin");
+	double DxyMax       = conf_->getParameter<double>("DxyMax");
       
 	if (doThetaPlots_) {
-	  int    ThetaBin   = conf_.getParameter<int>(   "ThetaBin");
-	  double ThetaMin   = conf_.getParameter<double>("ThetaMin");
-	  double ThetaMax   = conf_.getParameter<double>("ThetaMax");
+	  int    ThetaBin   = conf_->getParameter<int>(   "ThetaBin");
+	  double ThetaMin   = conf_->getParameter<double>("ThetaMin");
+	  double ThetaMax   = conf_->getParameter<double>("ThetaMax");
 	  
 	  ibooker.setCurrentFolder(TopFolder_+"/GeneralProperties");
 	  histname = "DistanceOfClosestApproachVsTheta_";
@@ -1187,6 +1205,7 @@ void TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       yPointOfClosestApproachToPV->Fill(track.vy()-pv.position().y());
       zPointOfClosestApproachToPV->Fill(track.dz(pv.position()));
       DistanceOfClosestApproachToPV      -> Fill(track.dxy(pv.position()));
+      DeltaZToPV                         -> Fill(track.dz (pv.position()));
       DistanceOfClosestApproachToPVVsPhi -> Fill(track.phi(), track.dxy(pv.position()));
       xPointOfClosestApproachVsZ0wrtPV   -> Fill(track.dz(pv.position()),(track.vx()-pv.position().x()));
       yPointOfClosestApproachVsZ0wrtPV   -> Fill(track.dz(pv.position()),(track.vy()-pv.position().y()));
@@ -1224,21 +1243,20 @@ void TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   }
 
   if (doMeasurementStatePlots_ || doAllPlots_){
-    std::string StateName = conf_.getParameter<std::string>("MeasurementState");
 
-    if (StateName == "All") {
+    if (stateName_ == "All") {
       fillHistosForState(iSetup, track, std::string("OuterSurface"));
       fillHistosForState(iSetup, track, std::string("InnerSurface"));
       fillHistosForState(iSetup, track, std::string("ImpactPoint"));
     } else if ( 
-	       StateName != "OuterSurface" && 
-	       StateName != "InnerSurface" && 
-	       StateName != "ImpactPoint" &&
-	       StateName != "default" 
+	       stateName_ != "OuterSurface" && 
+	       stateName_ != "InnerSurface" && 
+	       stateName_ != "ImpactPoint" &&
+	       stateName_ != "default" 
 	       ) {
       fillHistosForState(iSetup, track, std::string("default"));
     } else {
-      fillHistosForState(iSetup, track, StateName);
+      fillHistosForState(iSetup, track, stateName_);
     }
   }
   
@@ -1285,14 +1303,7 @@ void TrackAnalyzer::fillHistosForEfficiencyFromHitPatter(const reco::Track & tra
               hits_total_[Key(hp.getSubStructure(pattern), hp.getSubSubStructure(pattern), mon)]->Fill(monitoring);
               break;
             case 1:
-              hits_missing_[Key(hp.getSubStructure(pattern), hp.getSubSubStructure(pattern), mon)]->Fill(monitoring);
               hits_total_[Key(hp.getSubStructure(pattern), hp.getSubSubStructure(pattern), mon)]->Fill(monitoring);
-              break;
-            case 2:
-              hits_inactive_[Key(hp.getSubStructure(pattern), hp.getSubSubStructure(pattern), mon)]->Fill(monitoring);
-              break;
-            case 3:
-              hits_bad_[Key(hp.getSubStructure(pattern), hp.getSubSubStructure(pattern), mon)]->Fill(monitoring);
               break;
             default:
               LogDebug("TrackAnalyzer") << "Invalid hit category used " << hit_type << " ignored\n";
@@ -1309,92 +1320,92 @@ void TrackAnalyzer::bookHistosForState(std::string sname, DQMStore::IBooker & ib
 {
 
     // parameters from the configuration
-    std::string QualName       = conf_.getParameter<std::string>("Quality");
-    std::string AlgoName       = conf_.getParameter<std::string>("AlgoName");
+    std::string QualName       = conf_->getParameter<std::string>("Quality");
+    std::string AlgoName       = conf_->getParameter<std::string>("AlgoName");
 
     // use the AlgoName and Quality Name 
     std::string CategoryName = QualName != "" ? AlgoName + "_" + QualName : AlgoName;
 
     // get binning from the configuration
-    double Chi2NDFMin = conf_.getParameter<double>("Chi2NDFMin");
-    double Chi2NDFMax = conf_.getParameter<double>("Chi2NDFMax");
+    double Chi2NDFMin = conf_->getParameter<double>("Chi2NDFMin");
+    double Chi2NDFMax = conf_->getParameter<double>("Chi2NDFMax");
 
-    int    RecHitBin   = conf_.getParameter<int>(   "RecHitBin");
-    double RecHitMin   = conf_.getParameter<double>("RecHitMin");
-    double RecHitMax   = conf_.getParameter<double>("RecHitMax");
+    int    RecHitBin   = conf_->getParameter<int>(   "RecHitBin");
+    double RecHitMin   = conf_->getParameter<double>("RecHitMin");
+    double RecHitMax   = conf_->getParameter<double>("RecHitMax");
 
-    int    RecLayBin   = conf_.getParameter<int>(   "RecHitBin");
-    double RecLayMin   = conf_.getParameter<double>("RecHitMin");
-    double RecLayMax   = conf_.getParameter<double>("RecHitMax");
-
-
-    int    PhiBin     = conf_.getParameter<int>(   "PhiBin");
-    double PhiMin     = conf_.getParameter<double>("PhiMin");
-    double PhiMax     = conf_.getParameter<double>("PhiMax");
-
-    int    EtaBin     = conf_.getParameter<int>(   "EtaBin");
-    double EtaMin     = conf_.getParameter<double>("EtaMin");
-    double EtaMax     = conf_.getParameter<double>("EtaMax");
-
-    int    ThetaBin   = conf_.getParameter<int>(   "ThetaBin");
-    double ThetaMin   = conf_.getParameter<double>("ThetaMin");
-    double ThetaMax   = conf_.getParameter<double>("ThetaMax");
-
-    int    TrackQBin  = conf_.getParameter<int>(   "TrackQBin");
-    double TrackQMin  = conf_.getParameter<double>("TrackQMin");
-    double TrackQMax  = conf_.getParameter<double>("TrackQMax");
-
-    int    TrackPtBin = conf_.getParameter<int>(   "TrackPtBin");
-    double TrackPtMin = conf_.getParameter<double>("TrackPtMin");
-    double TrackPtMax = conf_.getParameter<double>("TrackPtMax");
-
-    int    TrackPBin  = conf_.getParameter<int>(   "TrackPBin");
-    double TrackPMin  = conf_.getParameter<double>("TrackPMin");
-    double TrackPMax  = conf_.getParameter<double>("TrackPMax");
-
-    int    TrackPxBin = conf_.getParameter<int>(   "TrackPxBin");
-    double TrackPxMin = conf_.getParameter<double>("TrackPxMin");
-    double TrackPxMax = conf_.getParameter<double>("TrackPxMax");
-
-    int    TrackPyBin = conf_.getParameter<int>(   "TrackPyBin");
-    double TrackPyMin = conf_.getParameter<double>("TrackPyMin");
-    double TrackPyMax = conf_.getParameter<double>("TrackPyMax");
-
-    int    TrackPzBin = conf_.getParameter<int>(   "TrackPzBin");
-    double TrackPzMin = conf_.getParameter<double>("TrackPzMin");
-    double TrackPzMax = conf_.getParameter<double>("TrackPzMax");
-
-    int    ptErrBin   = conf_.getParameter<int>(   "ptErrBin");
-    double ptErrMin   = conf_.getParameter<double>("ptErrMin");
-    double ptErrMax   = conf_.getParameter<double>("ptErrMax");
-
-    int    pxErrBin   = conf_.getParameter<int>(   "pxErrBin");
-    double pxErrMin   = conf_.getParameter<double>("pxErrMin");
-    double pxErrMax   = conf_.getParameter<double>("pxErrMax");
-
-    int    pyErrBin   = conf_.getParameter<int>(   "pyErrBin");
-    double pyErrMin   = conf_.getParameter<double>("pyErrMin");
-    double pyErrMax   = conf_.getParameter<double>("pyErrMax");
-
-    int    pzErrBin   = conf_.getParameter<int>(   "pzErrBin");
-    double pzErrMin   = conf_.getParameter<double>("pzErrMin");
-    double pzErrMax   = conf_.getParameter<double>("pzErrMax");
-
-    int    pErrBin    = conf_.getParameter<int>(   "pErrBin");
-    double pErrMin    = conf_.getParameter<double>("pErrMin");
-    double pErrMax    = conf_.getParameter<double>("pErrMax");
-
-    int    phiErrBin  = conf_.getParameter<int>(   "phiErrBin");
-    double phiErrMin  = conf_.getParameter<double>("phiErrMin");
-    double phiErrMax  = conf_.getParameter<double>("phiErrMax");
-
-    int    etaErrBin  = conf_.getParameter<int>(   "etaErrBin");
-    double etaErrMin  = conf_.getParameter<double>("etaErrMin");
-    double etaErrMax  = conf_.getParameter<double>("etaErrMax");
+    int    RecLayBin   = conf_->getParameter<int>(   "RecHitBin");
+    double RecLayMin   = conf_->getParameter<double>("RecHitMin");
+    double RecLayMax   = conf_->getParameter<double>("RecHitMax");
 
 
-    double Chi2ProbMin  = conf_.getParameter<double>("Chi2ProbMin");
-    double Chi2ProbMax  = conf_.getParameter<double>("Chi2ProbMax");
+    int    PhiBin     = conf_->getParameter<int>(   "PhiBin");
+    double PhiMin     = conf_->getParameter<double>("PhiMin");
+    double PhiMax     = conf_->getParameter<double>("PhiMax");
+
+    int    EtaBin     = conf_->getParameter<int>(   "EtaBin");
+    double EtaMin     = conf_->getParameter<double>("EtaMin");
+    double EtaMax     = conf_->getParameter<double>("EtaMax");
+
+    int    ThetaBin   = conf_->getParameter<int>(   "ThetaBin");
+    double ThetaMin   = conf_->getParameter<double>("ThetaMin");
+    double ThetaMax   = conf_->getParameter<double>("ThetaMax");
+
+    int    TrackQBin  = conf_->getParameter<int>(   "TrackQBin");
+    double TrackQMin  = conf_->getParameter<double>("TrackQMin");
+    double TrackQMax  = conf_->getParameter<double>("TrackQMax");
+
+    int    TrackPtBin = conf_->getParameter<int>(   "TrackPtBin");
+    double TrackPtMin = conf_->getParameter<double>("TrackPtMin");
+    double TrackPtMax = conf_->getParameter<double>("TrackPtMax");
+
+    int    TrackPBin  = conf_->getParameter<int>(   "TrackPBin");
+    double TrackPMin  = conf_->getParameter<double>("TrackPMin");
+    double TrackPMax  = conf_->getParameter<double>("TrackPMax");
+
+    int    TrackPxBin = conf_->getParameter<int>(   "TrackPxBin");
+    double TrackPxMin = conf_->getParameter<double>("TrackPxMin");
+    double TrackPxMax = conf_->getParameter<double>("TrackPxMax");
+
+    int    TrackPyBin = conf_->getParameter<int>(   "TrackPyBin");
+    double TrackPyMin = conf_->getParameter<double>("TrackPyMin");
+    double TrackPyMax = conf_->getParameter<double>("TrackPyMax");
+
+    int    TrackPzBin = conf_->getParameter<int>(   "TrackPzBin");
+    double TrackPzMin = conf_->getParameter<double>("TrackPzMin");
+    double TrackPzMax = conf_->getParameter<double>("TrackPzMax");
+
+    int    ptErrBin   = conf_->getParameter<int>(   "ptErrBin");
+    double ptErrMin   = conf_->getParameter<double>("ptErrMin");
+    double ptErrMax   = conf_->getParameter<double>("ptErrMax");
+
+    int    pxErrBin   = conf_->getParameter<int>(   "pxErrBin");
+    double pxErrMin   = conf_->getParameter<double>("pxErrMin");
+    double pxErrMax   = conf_->getParameter<double>("pxErrMax");
+
+    int    pyErrBin   = conf_->getParameter<int>(   "pyErrBin");
+    double pyErrMin   = conf_->getParameter<double>("pyErrMin");
+    double pyErrMax   = conf_->getParameter<double>("pyErrMax");
+
+    int    pzErrBin   = conf_->getParameter<int>(   "pzErrBin");
+    double pzErrMin   = conf_->getParameter<double>("pzErrMin");
+    double pzErrMax   = conf_->getParameter<double>("pzErrMax");
+
+    int    pErrBin    = conf_->getParameter<int>(   "pErrBin");
+    double pErrMin    = conf_->getParameter<double>("pErrMin");
+    double pErrMax    = conf_->getParameter<double>("pErrMax");
+
+    int    phiErrBin  = conf_->getParameter<int>(   "phiErrBin");
+    double phiErrMin  = conf_->getParameter<double>("phiErrMin");
+    double phiErrMax  = conf_->getParameter<double>("phiErrMax");
+
+    int    etaErrBin  = conf_->getParameter<int>(   "etaErrBin");
+    double etaErrMin  = conf_->getParameter<double>("etaErrMin");
+    double etaErrMax  = conf_->getParameter<double>("etaErrMax");
+
+
+    double Chi2ProbMin  = conf_->getParameter<double>("Chi2ProbMin");
+    double Chi2ProbMax  = conf_->getParameter<double>("Chi2ProbMax");
 
     ibooker.setCurrentFolder(TopFolder_);
 
@@ -1793,19 +1804,23 @@ void TrackAnalyzer::bookHistosForTrackerSpecific(DQMStore::IBooker & ibooker)
 {
 
     // parameters from the configuration
-    std::string QualName     = conf_.getParameter<std::string>("Quality");
-    std::string AlgoName     = conf_.getParameter<std::string>("AlgoName");
+    std::string QualName     = conf_->getParameter<std::string>("Quality");
+    std::string AlgoName     = conf_->getParameter<std::string>("AlgoName");
 
     // use the AlgoName and Quality Name 
     std::string CategoryName = QualName != "" ? AlgoName + "_" + QualName : AlgoName;
 
-    int    PhiBin     = conf_.getParameter<int>(   "PhiBin");
-    double PhiMin     = conf_.getParameter<double>("PhiMin");
-    double PhiMax     = conf_.getParameter<double>("PhiMax");
+    int    PhiBin     = conf_->getParameter<int>(   "PhiBin");
+    double PhiMin     = conf_->getParameter<double>("PhiMin");
+    double PhiMax     = conf_->getParameter<double>("PhiMax");
 
-    int    EtaBin     = conf_.getParameter<int>(   "EtaBin");
-    double EtaMin     = conf_.getParameter<double>("EtaMin");
-    double EtaMax     = conf_.getParameter<double>("EtaMax");
+    int    EtaBin     = conf_->getParameter<int>(   "EtaBin");
+    double EtaMin     = conf_->getParameter<double>("EtaMin");
+    double EtaMax     = conf_->getParameter<double>("EtaMax");
+
+    int    PtBin = conf_->getParameter<int>(   "TrackPtBin");
+    double PtMin = conf_->getParameter<double>("TrackPtMin");
+    double PtMax = conf_->getParameter<double>("TrackPtMax");
 
     // book hit property histograms
     // ---------------------------------------------------------------------------------//
@@ -1813,8 +1828,8 @@ void TrackAnalyzer::bookHistosForTrackerSpecific(DQMStore::IBooker & ibooker)
 
 
 
-    std::vector<std::string> subdetectors = conf_.getParameter<std::vector<std::string> >("subdetectors");
-    int detBin = conf_.getParameter<int>("subdetectorBin");
+    std::vector<std::string> subdetectors = conf_->getParameter<std::vector<std::string> >("subdetectors");
+    int detBin = conf_->getParameter<int>("subdetectorBin");
 
     for ( auto det : subdetectors ) {
       
@@ -1825,12 +1840,15 @@ void TrackAnalyzer::bookHistosForTrackerSpecific(DQMStore::IBooker & ibooker)
 
       recHitsPerSubDet_mes.detectorTag = det;
       int detID = -1;
-      if ( det == "TIB" ) detID = StripSubdetector::TIB;
-      if ( det == "TOB" ) detID = StripSubdetector::TOB;
-      if ( det == "TID" ) detID = StripSubdetector::TID;
-      if ( det == "TEC" ) detID = StripSubdetector::TEC;
-      if ( det == "PixBarrel" ) detID = PixelSubdetector::PixelBarrel;
-      if ( det == "PixEndcap" ) detID = PixelSubdetector::PixelEndcap;
+      if ( det == "TIB" ) detID = StripSubdetector::TIB; // 3
+      if ( det == "TOB" ) detID = StripSubdetector::TOB; // 5
+      if ( det == "TID" ) detID = StripSubdetector::TID; // 4
+      if ( det == "TEC" ) detID = StripSubdetector::TEC; // 6
+      if ( det == "PixBarrel" ) detID = PixelSubdetector::PixelBarrel; // 1
+      if ( det == "PixEndcap" ) detID = PixelSubdetector::PixelEndcap; // 2
+      if ( det == "Pixel" ) detID = 0;
+      if ( det == "Strip" ) detID = 7;
+      
       recHitsPerSubDet_mes.detectorId  = detID;
 
       histname = "NumberOfRecHitsPerTrack_" + det + "_" + CategoryName;
@@ -1848,6 +1866,11 @@ void TrackAnalyzer::bookHistosForTrackerSpecific(DQMStore::IBooker & ibooker)
       recHitsPerSubDet_mes.NumberOfRecHitsPerTrackVsEta->setAxisTitle("Track #eta",1);
       recHitsPerSubDet_mes.NumberOfRecHitsPerTrackVsEta->setAxisTitle("Number of " + det + " valid RecHits in each Track",2);
 
+      histname = "NumberOfRecHitsPerTrackVsPt_" + det + "_" + CategoryName;
+      recHitsPerSubDet_mes.NumberOfRecHitsPerTrackVsPt = ibooker.bookProfile(histname, histname, PtBin, PtMin, PtMax, detBin, -0.5, double(detBin)-0.5,"");
+      recHitsPerSubDet_mes.NumberOfRecHitsPerTrackVsPt->setAxisTitle("Track p_{T} [GeV]",1);
+      recHitsPerSubDet_mes.NumberOfRecHitsPerTrackVsPt->setAxisTitle("Number of " + det + " valid RecHits in each Track",2);
+
       histname = "NumberOfLayersPerTrack_" + det + "_" + CategoryName;
       recHitsPerSubDet_mes.NumberOfLayersPerTrack = ibooker.book1D(histname, histname, detBin, -0.5, double(detBin)-0.5);
       recHitsPerSubDet_mes.NumberOfLayersPerTrack->setAxisTitle("Number of " + det + " valid Layers in each Track",1);
@@ -1863,6 +1886,11 @@ void TrackAnalyzer::bookHistosForTrackerSpecific(DQMStore::IBooker & ibooker)
       recHitsPerSubDet_mes.NumberOfLayersPerTrackVsEta->setAxisTitle("Track #eta",1);
       recHitsPerSubDet_mes.NumberOfLayersPerTrackVsEta->setAxisTitle("Number of " + det + " valid Layers in each Track",2);
 
+      histname = "NumberOfLayersPerTrackVsPt_" + det + "_" + CategoryName;
+      recHitsPerSubDet_mes.NumberOfLayersPerTrackVsPt = ibooker.bookProfile(histname, histname, PtBin, PtMin, PtMax, detBin, -0.5, double(detBin)-0.5,"");
+      recHitsPerSubDet_mes.NumberOfLayersPerTrackVsPt->setAxisTitle("Track p_{T} [GeV]",1);
+      recHitsPerSubDet_mes.NumberOfLayersPerTrackVsPt->setAxisTitle("Number of " + det + " valid Layers in each Track",2);
+
       TkRecHitsPerSubDetMEMap.insert(std::pair<std::string,TkRecHitsPerSubDetMEs>(det,recHitsPerSubDet_mes));
 
       
@@ -1877,6 +1905,7 @@ void TrackAnalyzer::fillHistosForTrackerSpecific(const reco::Track & track)
     
   double phi   = track.phi();
   double eta   = track.eta();
+  double pt    = track.pt();
 
   for ( std::map<std::string,TkRecHitsPerSubDetMEs>::iterator it = TkRecHitsPerSubDetMEMap.begin();
        it != TkRecHitsPerSubDetMEMap.end(); it++ ) {
@@ -1885,29 +1914,45 @@ void TrackAnalyzer::fillHistosForTrackerSpecific(const reco::Track & track)
     int nValidRecHits = 0;
     int substr = it->second.detectorId;
     switch(substr) {
+    case 0 :
+      nValidLayers  = track.hitPattern().pixelBarrelLayersWithMeasurement() 
+	+ track.hitPattern().pixelEndcapLayersWithMeasurement();    // case 0: pixel
+      nValidRecHits = track.hitPattern().numberOfValidPixelBarrelHits()
+	+ track.hitPattern().numberOfValidPixelEndcapHits();        // case 0: pixel
+      break;
     case StripSubdetector::TIB :
-      nValidLayers  = track.hitPattern().stripTIBLayersWithMeasurement();       // case 0: strip TIB
-      nValidRecHits = track.hitPattern().numberOfValidStripTIBHits();           // case 0: strip TIB
+      nValidLayers  = track.hitPattern().stripTIBLayersWithMeasurement();       // case 3: strip TIB
+      nValidRecHits = track.hitPattern().numberOfValidStripTIBHits();           // case 3: strip TIB
       break;
     case StripSubdetector::TID :
-      nValidLayers  = track.hitPattern().stripTIDLayersWithMeasurement();       // case 0: strip TID
-      nValidRecHits = track.hitPattern().numberOfValidStripTIDHits();           // case 0: strip TID
+      nValidLayers  = track.hitPattern().stripTIDLayersWithMeasurement();       // case 4: strip TID
+      nValidRecHits = track.hitPattern().numberOfValidStripTIDHits();           // case 4: strip TID
       break;
     case StripSubdetector::TOB :
-      nValidLayers  = track.hitPattern().stripTOBLayersWithMeasurement();       // case 0: strip TOB
-      nValidRecHits = track.hitPattern().numberOfValidStripTOBHits();           // case 0: strip TOB
+      nValidLayers  = track.hitPattern().stripTOBLayersWithMeasurement();       // case 5: strip TOB
+      nValidRecHits = track.hitPattern().numberOfValidStripTOBHits();           // case 5: strip TOB
       break;
     case StripSubdetector::TEC :
-      nValidLayers  = track.hitPattern().stripTECLayersWithMeasurement();       // case 0: strip TEC
-      nValidRecHits = track.hitPattern().numberOfValidStripTECHits();           // case 0: strip TEC
+      nValidLayers  = track.hitPattern().stripTECLayersWithMeasurement();       // case 6: strip TEC
+      nValidRecHits = track.hitPattern().numberOfValidStripTECHits();           // case 6: strip TEC
       break;
     case PixelSubdetector::PixelBarrel :
-      nValidLayers  = track.hitPattern().pixelBarrelLayersWithMeasurement();    // case 0: pixel PXB
-      nValidRecHits = track.hitPattern().numberOfValidPixelBarrelHits();        // case 0: pixel PXB
+      nValidLayers  = track.hitPattern().pixelBarrelLayersWithMeasurement();    // case 1: pixel PXB
+      nValidRecHits = track.hitPattern().numberOfValidPixelBarrelHits();        // case 1: pixel PXB
       break;
     case PixelSubdetector::PixelEndcap :
-      nValidLayers  = track.hitPattern().pixelEndcapLayersWithMeasurement();    // case 0: pixel PXF
-      nValidRecHits = track.hitPattern().numberOfValidPixelEndcapHits();        // case 0: pixel PXF
+      nValidLayers  = track.hitPattern().pixelEndcapLayersWithMeasurement();    // case 2: pixel PXF
+      nValidRecHits = track.hitPattern().numberOfValidPixelEndcapHits();        // case 2: pixel PXF
+      break;
+    case 7 :
+      nValidLayers  = track.hitPattern().stripTIBLayersWithMeasurement()       // case 7: strip
+	+ track.hitPattern().stripTIDLayersWithMeasurement()
+	+ track.hitPattern().stripTOBLayersWithMeasurement()
+	+ track.hitPattern().stripTECLayersWithMeasurement();
+      nValidRecHits = track.hitPattern().numberOfValidStripTIBHits()           // case 7: strip
+	+ track.hitPattern().numberOfValidStripTIDHits()
+	+ track.hitPattern().numberOfValidStripTOBHits()
+	+ track.hitPattern().numberOfValidStripTECHits();
       break;
     default :
       break;
@@ -1917,10 +1962,12 @@ void TrackAnalyzer::fillHistosForTrackerSpecific(const reco::Track & track)
     it->second.NumberOfRecHitsPerTrack      -> Fill(nValidRecHits); 
     it->second.NumberOfRecHitsPerTrackVsPhi -> Fill(phi,    nValidRecHits);
     it->second.NumberOfRecHitsPerTrackVsEta -> Fill(eta,    nValidRecHits);
+    it->second.NumberOfRecHitsPerTrackVsPt  -> Fill(pt,     nValidRecHits);
     
     it->second.NumberOfLayersPerTrack      -> Fill(nValidLayers);
     it->second.NumberOfLayersPerTrackVsPhi -> Fill(phi,     nValidLayers);
     it->second.NumberOfLayersPerTrackVsEta -> Fill(eta,     nValidLayers);
+    it->second.NumberOfLayersPerTrackVsPt  -> Fill(pt,      nValidLayers);
   }
 
 }

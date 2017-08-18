@@ -45,6 +45,10 @@
     <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_SeriesOfProcesses.sh"/>
     <use   name="FWCore/Utilities"/>
   </bin>
+  <bin   file="TestIntegration.cpp" name="TestParentageWithStreamerIO">
+    <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_ParentageWithStreamerIO.sh"/>
+    <use   name="FWCore/Utilities"/>
+  </bin>
   <bin   file="TestIntegration.cpp" name="TestIntegrationThinningTests">
     <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_ThinningTests.sh"/>
     <use   name="FWCore/Utilities"/>
@@ -53,12 +57,20 @@
     <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_TestGetBy.sh"/>
     <use   name="FWCore/Utilities"/>
   </bin>
+  <bin   file="TestIntegration.cpp" name="TestIntegrationDropOnInput">
+    <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_TestDropOnInput.sh"/>
+    <use   name="FWCore/Utilities"/>
+  </bin>
   <bin   file="TestIntegration.cpp" name="TestSubProcess">
     <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_SubProcess.sh"/>
     <use   name="FWCore/Utilities"/>
   </bin>
   <bin   file="TestIntegration.cpp" name="TestIntegrationUnscheduledFailOnOutput">
     <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_unscheduledFailOnOutput.sh"/>
+    <use   name="FWCore/Utilities"/>
+  </bin>
+  <bin   file="TestIntegration.cpp" name="TestIntegrationGetProductAtEnd">
+    <flags   TEST_RUNNER_ARGS=" /bin/bash FWCore/Integration/test run_getProductAtEnd.sh"/>
     <use   name="FWCore/Utilities"/>
   </bin>
   <bin   file="TestIntegration.cpp" name="TestIntegrationParentless">
@@ -109,7 +121,7 @@
     <use   name="FWCore/ParameterSet"/>
     <use   name="FWCore/Framework"/>
   </library>
-  <library   file="ThingProducer.cc,ThingAlgorithm.cc,TrackOfThingsProducer.cc,ThinningThingProducer.cc,ThinningTestAnalyzer.cc,WhatsIt.cc,GadgetRcd.cc,AssociationMapProducer.cc,AssociationMapAnalyzer.cc,MissingDictionaryTestProducer.cc, WaitingThreadIntProducer.cc" name="SomeTestModules">
+  <library   file="ThingProducer.cc,ThingAlgorithm.cc,TrackOfThingsProducer.cc,ThinningThingProducer.cc,ThinningTestAnalyzer.cc,WhatsIt.cc,GadgetRcd.cc,AssociationMapProducer.cc,AssociationMapAnalyzer.cc,MissingDictionaryTestProducer.cc, WaitingThreadIntProducer.cc, ThingAnalyzer.cc" name="SomeTestModules">
     <flags   EDM_PLUGIN="1"/>
     <use   name="FWCore/Framework"/>
     <use   name="DataFormats/TestObjects"/>
@@ -188,7 +200,7 @@
     <use   name="FWCore/Framework"/>
     <use   name="FWCore/MessageLogger"/>
   </library>
-  <library   file="TestFindProduct.cc,ManyProductProducer.cc" name="FWCoreIntegrationTestFindProduct">
+  <library   file="TestFindProduct.cc,ManyProductProducer.cc,TestParentage.cc" name="FWCoreIntegrationTestFindProduct">
     <flags   EDM_PLUGIN="1"/>
     <use   name="FWCore/Framework"/>
     <use   name="FWCore/ParameterSet"/>
@@ -224,6 +236,11 @@
   <library   file="TestGetterOfProducts.cc" name="TestGetterOfProducts">
     <flags   EDM_PLUGIN="1"/>
     <use   name="DataFormats/TestObjects"/>
+    <use   name="FWCore/Framework"/>
+    <use   name="FWCore/ParameterSet"/>
+  </library>
+  <library   file="TestDescriptionComments.cc" name="TestDescriptionComments">
+    <flags   EDM_PLUGIN="1"/>
     <use   name="FWCore/Framework"/>
     <use   name="FWCore/ParameterSet"/>
   </library>

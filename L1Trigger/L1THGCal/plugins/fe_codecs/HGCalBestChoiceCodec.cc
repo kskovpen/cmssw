@@ -16,15 +16,14 @@ HGCalBestChoiceCodec::HGCalBestChoiceCodec(const edm::ParameterSet& conf) : Code
 
 
 /*****************************************************************/
-void HGCalBestChoiceCodec::setDataPayloadImpl(const HGCalTriggerGeometryBase& geom, 
-        const HGCEEDigiCollection& ee,
+void HGCalBestChoiceCodec::setDataPayloadImpl(const HGCEEDigiCollection& ee,
         const HGCHEDigiCollection& fh,
-        const HGCHEDigiCollection& ) 
+        const HGCBHDigiCollection& ) 
 /*****************************************************************/
 {
     data_.reset();
-    std::vector<HGCDataFrame<HGCalDetId,HGCSample>> dataframes;
-    std::vector<std::pair<HGCalDetId, uint32_t > > linearized_dataframes;
+    std::vector<HGCDataFrame<DetId,HGCSample>> dataframes;
+    std::vector<std::pair<DetId, uint32_t > > linearized_dataframes;
     // convert ee and fh hit collections into the same object
     if(ee.size()>0)
     {
@@ -51,14 +50,13 @@ void HGCalBestChoiceCodec::setDataPayloadImpl(const HGCalTriggerGeometryBase& ge
     // linearize input energy on 16 bits
     codecImpl_.linearize(dataframes, linearized_dataframes);
     // sum energy in trigger cells
-    codecImpl_.triggerCellSums(geom, linearized_dataframes, data_);
+    codecImpl_.triggerCellSums(*geometry_, linearized_dataframes, data_);
     // choose best trigger cells in the module
     codecImpl_.bestChoiceSelect(data_);
 }
 
 /*****************************************************************/
-void HGCalBestChoiceCodec::setDataPayloadImpl(const HGCalTriggerGeometryBase& geom, 
-        const l1t::HGCFETriggerDigi& digi)
+void HGCalBestChoiceCodec::setDataPayloadImpl(const l1t::HGCFETriggerDigi& digi)
 /*****************************************************************/
 {
     data_.reset();
@@ -82,6 +80,7 @@ void HGCalBestChoiceCodec::setDataPayloadImpl(const HGCalTriggerGeometryBase& ge
     conf.addParameter<double>     ("tdcOnsetfC",    codecImpl_.tdcOnsetfC());
     conf.addParameter<uint32_t>   ("triggerCellTruncationBits", codecImpl_.triggerCellTruncationBits());
     HGCalBestChoiceCodec codecInput(conf);
+    codecInput.setGeometry(geometry_);
     digi.decode(codecInput,data_);
     // choose best trigger cells in the module
     codecImpl_.bestChoiceSelect(data_);
@@ -96,7 +95,7 @@ std::vector<bool> HGCalBestChoiceCodec::encodeImpl(const HGCalBestChoiceCodec::d
 }
 
 /*****************************************************************/
-HGCalBestChoiceCodec::data_type HGCalBestChoiceCodec::decodeImpl(const std::vector<bool>& data) const 
+HGCalBestChoiceCodec::data_type HGCalBestChoiceCodec::decodeImpl(const std::vector<bool>& data, const uint32_t) const 
 /*****************************************************************/
 {
     return codecImpl_.decode(data);

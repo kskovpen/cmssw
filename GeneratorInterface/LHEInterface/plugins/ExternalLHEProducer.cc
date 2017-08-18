@@ -66,7 +66,7 @@ class ExternalLHEProducer : public edm::one::EDProducer<edm::BeginRunProducer,
                                                         edm::EndRunProducer> {
 public:
   explicit ExternalLHEProducer(const edm::ParameterSet& iConfig);
-  virtual ~ExternalLHEProducer();
+  virtual ~ExternalLHEProducer() override;
   
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   
@@ -75,12 +75,13 @@ private:
   virtual void produce(edm::Event&, const edm::EventSetup&) override;
   virtual void beginRunProduce(edm::Run& run, edm::EventSetup const& es) override;
   virtual void endRunProduce(edm::Run&, edm::EventSetup const&) override;
+  virtual void preallocThreads(unsigned int) override;
 
   int closeDescriptors(int preserve);
   void executeScript();
   std::unique_ptr<std::string> readOutput();
 
-  virtual void nextEvent();
+  void nextEvent();
   
   // ----------member data ---------------------------
   std::string scriptName_;
@@ -88,9 +89,10 @@ private:
   std::vector<std::string> args_;
   uint32_t npars_;
   uint32_t nEvents_;
+  unsigned int nThreads_{1};
   std::string outputContents_;
 
-  std::auto_ptr<lhef::LHEReader>		reader_;
+  std::unique_ptr<lhef::LHEReader>	reader_;
   boost::shared_ptr<lhef::LHERunInfo>	runInfoLast;
   boost::shared_ptr<lhef::LHERunInfo>	runInfo;
   boost::shared_ptr<lhef::LHEEvent>	partonLevel;
@@ -131,10 +133,11 @@ ExternalLHEProducer::ExternalLHEProducer(const edm::ParameterSet& iConfig) :
 {
   if (npars_ != args_.size())
     throw cms::Exception("ExternalLHEProducer") << "Problem with configuration: " << args_.size() << " script arguments given, expected " << npars_;
-  produces<LHEXMLStringProduct, edm::InRun>("LHEScriptOutput"); 
+  produces<LHEXMLStringProduct, edm::Transition::BeginRun>("LHEScriptOutput"); 
 
   produces<LHEEventProduct>();
-  produces<LHERunInfoProduct, edm::InRun>();
+  produces<LHERunInfoProduct, edm::Transition::BeginRun>();
+  //produces<LHERunInfoProduct, edm::Transition::EndRun>();
 }
 
 
@@ -146,6 +149,13 @@ ExternalLHEProducer::~ExternalLHEProducer()
 //
 // member functions
 //
+
+// ------------ method called with number of threads in job --
+void
+ExternalLHEProducer::preallocThreads(unsigned int iThreads)
+{
+  nThreads_ = iThreads;
+}
 
 // ------------ method called to produce the data  ------------
 void
@@ -215,7 +225,8 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   
   std::ostringstream eventStream;
   eventStream << nEvents_;
-  args_.push_back(eventStream.str());
+  // args_.push_back(eventStream.str());
+  args_.insert(args_.begin() + 1, eventStream.str());
 
   // pass the random number generator seed as last argument
 
@@ -229,7 +240,11 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
   }
   std::ostringstream randomStream;
   randomStream << rng->mySeed(); 
-  args_.push_back(randomStream.str());
+  // args_.push_back(randomStream.str());
+  args_.insert(args_.begin() + 2, randomStream.str());
+
+  // args_.emplace_back(std::to_string(nThreads_));
+  args_.insert(args_.begin() + 3, std::to_string(nThreads_));
 
   for ( unsigned int iArg = 0; iArg < args_.size() ; iArg++ ) {
     LogDebug("LHEInputArgs") << "arg [" << iArg << "] = " << args_[iArg];
@@ -255,8 +270,7 @@ ExternalLHEProducer::beginRunProduce(edm::Run& run, edm::EventSetup const& es)
 
   std::vector<std::string> infiles(1, outputFile_);
   unsigned int skip = 0;
-  std::auto_ptr<lhef::LHEReader> thisRead(new lhef::LHEReader(infiles, skip));
-  reader_ = thisRead;
+  reader_ = std::make_unique<lhef::LHEReader>(infiles, skip);
 
   nextEvent();
   if (runInfoLast) {
@@ -484,6 +498,7 @@ void ExternalLHEProducer::nextEvent()
   if (partonLevel)
     return;
 
+  if(not reader_) { return;}
   partonLevel = reader_->next();
   if (!partonLevel)
     return;

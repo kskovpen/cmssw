@@ -1,88 +1,146 @@
 #include "CondCore/Utilities/interface/PayloadInspectorModule.h"
-#include "CondCore/Utilities/interface/JsonPrinter.h"
+#include "CondCore/Utilities/interface/PayloadInspector.h"
 #include "CondCore/CondDB/interface/Time.h"
-#include "CondCore/CondDB/interface/PayloadReader.h"
 
 #include "CondFormats/SiStripObjects/interface/SiStripDetVOff.h"
+
+#include "CommonTools/TrackerMap/interface/TrackerMap.h"
 
 #include <memory>
 #include <sstream>
 
 namespace {
 
-  class SiStripDetVOff_LV {
+  class SiStripDetVOff_LV : public cond::payloadInspector::TimeHistoryPlot<SiStripDetVOff,int>{
   public:
-    SiStripDetVOff_LV(){
+    SiStripDetVOff_LV(): cond::payloadInspector::TimeHistoryPlot<SiStripDetVOff,int >( "Nr of mod with LV OFF vs time", "nLVOff"){
     }
 
-    // return the type-name of the objects we handle, so the PayloadInspector can find corresponding tags
-    std::string objectType() {
-      return "SiStripDetVOff";
+    int getFromPayload( SiStripDetVOff& payload ) override{
+      return payload.getLVoffCounts();
     }
 
-    // return a title string to be used in the PayloadInspector
-    std::string title() {
-      return "Nr of mod with LV OFF vs time";
+  };
+
+  class SiStripDetVOff_HV : public cond::payloadInspector::TimeHistoryPlot<SiStripDetVOff,int> {
+  public:
+    SiStripDetVOff_HV() : cond::payloadInspector::TimeHistoryPlot<SiStripDetVOff,int >( "Nr of mod with HV OFF vs time","nHVOff"){
     }
 
-    std::string info() {
-      return title();
+    int getFromPayload( SiStripDetVOff& payload ) override{
+      return payload.getHVoffCounts();
     }
 
-    std::string data( const boost::python::list& iovs ){
-      cond::persistency::PayloadReader reader;
-      // TO DO: add try /catch block                                                                                                                                                    
-      reader.open();
-      cond::utilities::JsonPrinter jprint("Time","nLVOff");
-      for( int i=0; i< len( iovs ); i++ ) {
-	cond::Iov_t iov = boost::python::extract<cond::Iov_t>( iovs[i] );
-	std::shared_ptr<SiStripDetVOff> obj = reader.fetch<SiStripDetVOff>( iov.payloadId );
-	jprint.append(boost::lexical_cast<std::string>( iov.since ),
-		      boost::lexical_cast<std::string>( obj->getLVoffCounts() ),
-		      boost::lexical_cast<std::string>( 0. ) );
-      }
-      return jprint.print();
+  };
+
+  /************************************************
+    TrackerMap of Module VOff
+  *************************************************/
+  class SiStripDetVOff_IsModuleVOff_TrackerMap : public cond::payloadInspector::PlotImage<SiStripDetVOff> {
+  public:
+    SiStripDetVOff_IsModuleVOff_TrackerMap() : cond::payloadInspector::PlotImage<SiStripDetVOff>( "Tracker Map IsModuleVOff" ){
+      setSingleIov( true );
+    }
+
+    bool fill( const std::vector<std::tuple<cond::Time_t,cond::Hash> >& iovs ) override{
+      auto iov = iovs.front();
+      std::shared_ptr<SiStripDetVOff> payload = fetchPayload( std::get<1>(iov) );
+
+      std::unique_ptr<TrackerMap> tmap = std::unique_ptr<TrackerMap>(new TrackerMap("SiStripIsModuleVOff"));
+      tmap->setPalette(1);
+      std::string titleMap = "TrackerMap of VOff modules (HV or LV), payload : "+std::get<1>(iov);
+      tmap->setTitle(titleMap);
+
+      std::vector<uint32_t> detid;
+      payload->getDetIds(detid);
+
+      for (const auto & d : detid) {
+	if(payload->IsModuleVOff(d)){
+	  tmap->fill(d,1);
+	}
+      } // loop over detIds
+      
+      std::string fileName(m_imageFileName);
+      tmap->save(true,0,0,fileName);
+
+      return true;
     }
   };
 
-  class SiStripDetVOff_HV {
+  /************************************************
+    TrackerMap of Module HVOff
+  *************************************************/
+  class SiStripDetVOff_IsModuleHVOff_TrackerMap : public cond::payloadInspector::PlotImage<SiStripDetVOff> {
   public:
-    SiStripDetVOff_HV(){
+    SiStripDetVOff_IsModuleHVOff_TrackerMap() : cond::payloadInspector::PlotImage<SiStripDetVOff>( "Tracker Map IsModuleHVOff" ){
+      setSingleIov( true );
     }
 
-    // return the type-name of the objects we handle, so the PayloadInspector can find corresponding tags
-    std::string objectType() {
-      return "SiStripDetVOff";
+    bool fill( const std::vector<std::tuple<cond::Time_t,cond::Hash> >& iovs ) override{
+      auto iov = iovs.front();
+      std::shared_ptr<SiStripDetVOff> payload = fetchPayload( std::get<1>(iov) );
+
+      std::unique_ptr<TrackerMap> tmap = std::unique_ptr<TrackerMap>(new TrackerMap("SiStripIsModuleHVOff"));
+      tmap->setPalette(1);
+      std::string titleMap = "TrackerMap of HV Off modules, payload : "+std::get<1>(iov);
+      tmap->setTitle(titleMap);
+
+      std::vector<uint32_t> detid;
+      payload->getDetIds(detid);
+
+      for (const auto & d : detid) {
+	if(payload->IsModuleHVOff(d)){
+	  tmap->fill(d,1);
+	}
+      } // loop over detIds
+      
+      std::string fileName(m_imageFileName);
+      tmap->save(true,0,0,fileName);
+
+      return true;
+    }
+  };
+
+  /************************************************
+    TrackerMap of Module LVOff
+  *************************************************/
+  class SiStripDetVOff_IsModuleLVOff_TrackerMap : public cond::payloadInspector::PlotImage<SiStripDetVOff> {
+  public:
+    SiStripDetVOff_IsModuleLVOff_TrackerMap() : cond::payloadInspector::PlotImage<SiStripDetVOff>( "Tracker Map IsModuleLVOff" ){
+      setSingleIov( true );
     }
 
-    // return a title string to be used in the PayloadInspector
-    std::string title() {
-      return "Nr of mod with HV OFF vs time";
-    }
+    bool fill( const std::vector<std::tuple<cond::Time_t,cond::Hash> >& iovs ) override{
+      auto iov = iovs.front();
+      std::shared_ptr<SiStripDetVOff> payload = fetchPayload( std::get<1>(iov) );
 
-    std::string info() {
-      return title();
-    }
+      std::unique_ptr<TrackerMap> tmap = std::unique_ptr<TrackerMap>(new TrackerMap("SiStripIsModuleLVOff"));
+      tmap->setPalette(1);
+      std::string titleMap = "TrackerMap of LV Off modules, payload : "+std::get<1>(iov);
+      tmap->setTitle(titleMap);
 
-    std::string data( const boost::python::list& iovs ){
-      cond::persistency::PayloadReader reader;
-      // TO DO: add try /catch block                                                                                                                                                    
-      reader.open();
-      cond::utilities::JsonPrinter jprint("Time","nHVOff");
-      for( int i=0; i< len( iovs ); i++ ) {
-	cond::Iov_t iov = boost::python::extract<cond::Iov_t>( iovs[i] );
-	std::shared_ptr<SiStripDetVOff> obj = reader.fetch<SiStripDetVOff>( iov.payloadId );
-	jprint.append(boost::lexical_cast<std::string>( iov.since ),
-		      boost::lexical_cast<std::string>( obj->getHVoffCounts() ),
-		      boost::lexical_cast<std::string>( 0. ) );
-      }
-      return jprint.print();
+      std::vector<uint32_t> detid;
+      payload->getDetIds(detid);
+
+      for (const auto & d : detid) {
+	if(payload->IsModuleLVOff(d)){
+	  tmap->fill(d,1);
+	}
+      } // loop over detIds
+      
+      std::string fileName(m_imageFileName);
+      tmap->save(true,0,0,fileName);
+
+      return true;
     }
   };
 
 }
 
-PAYLOAD_INSPECTOR_MODULE( SiStrip ){
+PAYLOAD_INSPECTOR_MODULE( SiStripDetVOff ){
   PAYLOAD_INSPECTOR_CLASS( SiStripDetVOff_LV );
   PAYLOAD_INSPECTOR_CLASS( SiStripDetVOff_HV );
+  PAYLOAD_INSPECTOR_CLASS( SiStripDetVOff_IsModuleVOff_TrackerMap );
+  PAYLOAD_INSPECTOR_CLASS( SiStripDetVOff_IsModuleLVOff_TrackerMap );
+  PAYLOAD_INSPECTOR_CLASS( SiStripDetVOff_IsModuleHVOff_TrackerMap );
 }

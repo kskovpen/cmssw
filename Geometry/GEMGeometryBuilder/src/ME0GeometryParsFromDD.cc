@@ -16,18 +16,10 @@ ME0GeometryParsFromDD::build( const DDCompactView* cview,
 {
   std::string attribute = "ReadOutName";
   std::string value     = "MuonME0Hits";
-  DDValue val(attribute, value, 0.0);
 
   // Asking only for the MuonME0's
-  DDSpecificsFilter filter;
-  filter.setCriteria( val,  // name & value of a variable 
-		      DDCompOp::matches,
-		      DDLogOp::AND, 
-		      true, // compare strings otherwise doubles
-		      true  // use merged-specifics or simple-specifics
-		      );
-  DDFilteredView fview( *cview );
-  fview.addFilter( filter );
+  DDSpecificsMatchesValueFilter filter{DDValue(attribute, value, 0.0)};
+  DDFilteredView fview( *cview, filter );
 
   this->buildGeometry( fview, muonConstants, rgeo );
 }
@@ -51,16 +43,16 @@ ME0GeometryParsFromDD::buildGeometry( DDFilteredView& fview,
 
     std::vector<double> dpar = fview.logicalPart().solid().parameters();
     std::vector<double> pars;
-    pars.push_back( dpar[4]); // half bottom edge
-    pars.push_back( dpar[8]); // half top edge
-    pars.push_back( dpar[0]); // half apothem
-    pars.push_back( 0.4 ); // half thickness
-    pars.push_back( 0.0 ); // nStrips
-    pars.push_back( 0.0 ); // nPads
+    pars.emplace_back( dpar[4]); // half bottom edge
+    pars.emplace_back( dpar[8]); // half top edge
+    pars.emplace_back( dpar[0]); // half apothem
+    pars.emplace_back( 0.4 ); // half thickness
+    pars.emplace_back( 0.0 ); // nStrips
+    pars.emplace_back( 0.0 ); // nPads
 
     std::string name = fview.logicalPart().name().name();
     std::vector<std::string> strpars;
-    strpars.push_back( name );
+    strpars.emplace_back( name );
 
     DDRotationMatrix rota = fview.rotation();
 

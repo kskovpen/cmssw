@@ -88,6 +88,7 @@ namespace edm {
       lumiEntryNumber_(0LL),
       runEntryNumber_(0LL),
       indexIntoFile_(),
+      nEventsInLumi_(0),
       metaDataTree_(nullptr),
       parameterSetsTree_(nullptr),
       parentageTree_(nullptr),
@@ -432,6 +433,7 @@ namespace edm {
     // Report event written
     Service<JobReport> reportSvc;
     reportSvc->eventWrittenToFile(reportToken_, e.id().run(), e.id().event());
+    ++nEventsInLumi_;
   }
 
   void RootOutputFile::writeLuminosityBlock(LuminosityBlockForOutput const& lb) {
@@ -451,7 +453,8 @@ namespace edm {
     lumiTree_.optimizeBaskets(10ULL*1024*1024);
 
     Service<JobReport> reportSvc;
-    reportSvc->reportLumiSection(reportToken_, lb.id().run(), lb.id().luminosityBlock());
+    reportSvc->reportLumiSection(reportToken_, lb.id().run(), lb.id().luminosityBlock(),nEventsInLumi_);
+    nEventsInLumi_ = 0;
   }
 
   void RootOutputFile::writeRun(RunForOutput const& r) {
@@ -734,7 +737,8 @@ namespace edm {
         if(product == nullptr) {
           // No product with this ID is in the event.
           // Add a null product.
-          TClass* cp = TClass::GetClass(item.branchDescription_->wrappedName().c_str());
+          TClass* cp = item.branchDescription_->wrappedType().getClass();
+          assert(cp != nullptr);
           int offset = cp->GetBaseClassOffset(wrapperBaseTClass_);
           void* p = cp->New();
           std::unique_ptr<WrapperBase> dummy = getWrapperBasePtr(p, offset);
@@ -744,7 +748,7 @@ namespace edm {
         item.product_ = product;
       }
       if (keepProvenance && productProvenance == nullptr) {
-        productProvenance = provRetriever->branchIDToProvenance(id);
+        productProvenance = provRetriever->branchIDToProvenance(item.branchDescription_->originalBranchID());
       }
       if(productProvenance) {
         insertProductProvenance(*productProvenance,provenanceToKeep);

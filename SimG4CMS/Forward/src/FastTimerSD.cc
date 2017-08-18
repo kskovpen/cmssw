@@ -6,7 +6,7 @@
 #include "DetectorDescription/Core/interface/DDFilteredView.h"
 #include "DetectorDescription/Core/interface/DDLogicalPart.h"
 #include "DetectorDescription/Core/interface/DDMaterial.h"
-#include "DetectorDescription/Base/interface/DDutils.h"
+#include "DetectorDescription/Core/interface/DDutils.h"
 #include "DetectorDescription/Core/interface/DDValue.h"
 
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -79,11 +79,8 @@ FastTimerSD::FastTimerSD(std::string name, const DDCompactView & cpv,
   }
     
   std::string attribute = "ReadOutName";
-  DDSpecificsFilter filter;
-  DDValue           ddv(attribute,name,0);
-  filter.setCriteria(ddv,DDCompOp::equals);
-  DDFilteredView fv(cpv);
-  fv.addFilter(filter);
+  DDSpecificsMatchesValueFilter filter{DDValue(attribute,name,0)};
+  DDFilteredView fv(cpv,filter);
   fv.firstChild();
   DDsvalues_type sv(fv.mergedSpecifics());
   std::vector<int> temp = dbl_to_int(getDDDArray("Type",sv));

@@ -25,7 +25,7 @@ class PFHBHERecHitCreator :  public  PFRecHitCreatorBase {
       recHitToken_ = iC.consumes<edm::SortedCollection<HBHERecHit> >(iConfig.getParameter<edm::InputTag>("src"));
     }
 
-    void importRecHits(std::unique_ptr<reco::PFRecHitCollection>&out,std::unique_ptr<reco::PFRecHitCollection>& cleaned ,const edm::Event& iEvent,const edm::EventSetup& iSetup) {
+    void importRecHits(std::unique_ptr<reco::PFRecHitCollection>&out,std::unique_ptr<reco::PFRecHitCollection>& cleaned ,const edm::Event& iEvent,const edm::EventSetup& iSetup) override {
 
       beginEvent(iEvent,iSetup);
 
@@ -42,7 +42,7 @@ class PFHBHERecHitCreator :  public  PFRecHitCreatorBase {
 
       iEvent.getByToken(recHitToken_,recHitHandle);
       for( const auto& erh : *recHitHandle ) {      
-	const HcalDetId& detid = (HcalDetId)erh.detid();
+	const HcalDetId detid = erh.idFront();
 	HcalSubdetector esd=(HcalSubdetector)detid.subdetId();
 	
 	auto energy = erh.energy();
@@ -68,8 +68,8 @@ class PFHBHERecHitCreator :  public  PFRecHitCreatorBase {
 	// find rechit geometry
 	if(!thisCell) {
 	  edm::LogError("PFHBHERecHitCreator")
-	    <<"warning detid "<<detid.rawId()
-	    <<" not found in geometry"<<std::endl;
+	    <<"warning detid "<<std::hex<<detid.rawId()<<std::dec<< " "
+	    <<detid<<" not found in geometry"<<std::endl;
 	  continue;
 	}
 

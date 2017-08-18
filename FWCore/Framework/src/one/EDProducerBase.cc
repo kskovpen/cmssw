@@ -18,6 +18,7 @@
 #include "FWCore/Framework/interface/LuminosityBlock.h"
 #include "FWCore/Framework/interface/Run.h"
 #include "FWCore/Framework/src/edmodule_mightGet_config.h"
+#include "FWCore/Framework/src/PreallocationConfiguration.h"
 #include "FWCore/Framework/src/EventSignalsSentry.h"
 
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -78,6 +79,12 @@ namespace edm {
     }
     
     void
+    EDProducerBase::doPreallocate(PreallocationConfiguration const& iPrealloc) {
+      auto const nThreads = iPrealloc.numberOfThreads();
+      preallocThreads(nThreads);
+    }
+   
+    void
     EDProducerBase::doBeginRun(RunPrincipal const& rp, EventSetup const& c,
                                ModuleCallingContext const* mcc) {
       Run r(rp, moduleDescription_, mcc);
@@ -129,16 +136,6 @@ namespace edm {
     void
     EDProducerBase::doRespondToCloseInputFile(FileBlock const& fb) {
       //respondToCloseInputFile(fb);
-    }
-    
-    void
-    EDProducerBase::doPreForkReleaseResources() {
-      preForkReleaseResources();
-    }
-    
-    void
-    EDProducerBase::doPostForkReacquireResources(unsigned int iChildIndex, unsigned int iNumberOfChildren) {
-      postForkReacquireResources(iChildIndex, iNumberOfChildren);
     }
     
     void EDProducerBase::doBeginRun_(Run const& rp, EventSetup const& c) {}

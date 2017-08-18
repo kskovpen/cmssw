@@ -75,6 +75,8 @@ RunManagerMT::RunManagerMT(edm::ParameterSet const & p):
 {    
   m_currentRun = nullptr;
   m_UIsession.reset(new CustomUIsession());
+  m_physicsList.reset(nullptr);
+  m_world.reset(nullptr);
   m_kernel = new G4MTRunManagerKernel();
 
   m_check = p.getUntrackedParameter<bool>("CheckOverlap",false);
@@ -156,8 +158,11 @@ void RunManagerMT::initG4(const DDCompactView *pDD, const MagneticField *pMF,
 
   m_physicsList->SetDefaultCutValue(m_pPhysics.getParameter<double>("DefaultCutValue")*CLHEP::cm);
   m_physicsList->SetCutsWithDefault();
-  m_prodCuts.reset(new DDG4ProductionCuts(map_, verb, m_pPhysics));	
-  m_prodCuts->update();
+
+  if(m_pPhysics.getParameter<bool>("CutsPerRegion")) {
+    m_prodCuts.reset(new DDG4ProductionCuts(map_, verb, m_pPhysics));	
+    m_prodCuts->update();
+  }
   
   m_kernel->SetPhysics(phys);
   m_kernel->InitializePhysics();
@@ -200,7 +205,9 @@ void RunManagerMT::initG4(const DDCompactView *pDD, const MagneticField *pMF,
 
   // geometry dump
   if("" != m_WriteFile) {
-    G4GDMLParser gdml(new G4GDMLReadStructure(), new CMSGDMLWriteStructure());
+    G4GDMLParser gdml;
+    gdml.SetRegionExport(true);
+    gdml.SetEnergyCutsExport(true);
     gdml.Write(m_WriteFile, m_world->GetWorldVolume(), true);
   }
 

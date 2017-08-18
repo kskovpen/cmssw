@@ -2,7 +2,7 @@
 #define DetectorDescription_Core_DDPosData_h
 
 #include "DetectorDescription/Core/interface/DDTransform.h"
-#include "DetectorDescription/Base/interface/DDTranslation.h"
+#include "DetectorDescription/Core/interface/DDTranslation.h"
 #include "DetectorDescription/Core/interface/DDDivision.h"
 
 //! Relative position of a child-volume inside a parent-volume
@@ -39,8 +39,8 @@ struct DDPosData
   const DDDivision * div_; /**< provides original division that created this pos */
 
 private:
-  DDPosData();  
-  DDPosData & operator=(const DDPosData &);
+  DDPosData() = delete;  
+  DDPosData & operator=(const DDPosData &) = delete;
 };
 
 #endif

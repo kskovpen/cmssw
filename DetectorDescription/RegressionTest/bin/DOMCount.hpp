@@ -42,7 +42,7 @@ public:
     //  Constructors and Destructor
     // -----------------------------------------------------------------------
     DOMCountErrorHandler();
-    ~DOMCountErrorHandler();
+    ~DOMCountErrorHandler() override;
 
 
     // -----------------------------------------------------------------------
@@ -54,7 +54,7 @@ public:
     // -----------------------------------------------------------------------
     //  Implementation of the DOM ErrorHandler interface
     // -----------------------------------------------------------------------
-    bool handleError(const DOMError& domError);
+    bool handleError(const DOMError& domError) override;
     void resetErrors();
 
 
@@ -62,8 +62,8 @@ private :
     // -----------------------------------------------------------------------
     //  Unimplemented constructors and operators
     // -----------------------------------------------------------------------
-    DOMCountErrorHandler(const DOMCountErrorHandler&);
-    void operator=(const DOMCountErrorHandler&);
+    DOMCountErrorHandler(const DOMCountErrorHandler&) = delete;
+    void operator=(const DOMCountErrorHandler&) = delete;
 
 
     // -----------------------------------------------------------------------

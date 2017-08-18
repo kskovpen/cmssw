@@ -39,11 +39,10 @@ class PFHBHERecHitCreatorMaxSample :  public  PFRecHitCreatorBase {
     }
 
 
-  ~PFHBHERecHitCreatorMaxSample() {
-  }
+  ~PFHBHERecHitCreatorMaxSample() override = default;
 
 
-    void importRecHits(std::unique_ptr<reco::PFRecHitCollection>&out,std::unique_ptr<reco::PFRecHitCollection>& cleaned ,const edm::Event& iEvent,const edm::EventSetup& iSetup) {
+    void importRecHits(std::unique_ptr<reco::PFRecHitCollection>&out,std::unique_ptr<reco::PFRecHitCollection>& cleaned ,const edm::Event& iEvent,const edm::EventSetup& iSetup) override {
 
       beginEvent(iEvent,iSetup);
 
@@ -64,7 +63,7 @@ class PFHBHERecHitCreatorMaxSample :  public  PFRecHitCreatorBase {
 
       iEvent.getByToken(recHitToken_,recHitHandle);
       for( const auto& erh : *recHitHandle ) {      
-	const HcalDetId& detid = (HcalDetId)erh.detid();
+	const HcalDetId detid = erh.idFront();
 	HcalSubdetector esd=(HcalSubdetector)detid.subdetId();
 	
 	
@@ -160,12 +159,12 @@ class PFHBHERecHitCreatorMaxSample :  public  PFRecHitCreatorBase {
 
 	}	    
 
-	if (hitEnergies.size()==0)
+	if (hitEnergies.empty())
 	  continue;
 
 	int depth = detid.depth();
 	
-	const CaloCellGeometry *thisCell=0;
+	const CaloCellGeometry *thisCell=nullptr;
 	PFLayer::Layer layer = PFLayer::HCAL_BARREL1;
 	switch(esd) {
 	case HcalBarrel:

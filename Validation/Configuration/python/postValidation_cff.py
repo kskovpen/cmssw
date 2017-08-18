@@ -11,11 +11,14 @@ from Validation.EventGenerator.PostProcessor_cff import *
 from Validation.RecoEgamma.photonPostProcessor_cff import *
 from Validation.RecoEgamma.electronPostValidationSequence_cff import *
 from Validation.RecoEgamma.electronPostValidationSequenceMiniAOD_cff import *
+from Validation.RecoB.BDHadronTrackValidation_cff import *
 from Validation.RecoParticleFlow.PFValidationClient_cff import *
 from Validation.RPCRecHits.postValidation_cfi import *
 from Validation.RecoTau.DQMMCValidation_cfi import *
 from Validation.RecoVertex.PostProcessorVertex_cff import *
 from Validation.RecoMET.METPostProcessor_cff import *
+from Validation.L1T.postProcessorL1Gen_cff import *
+from Validation.SiPixelPhase1ConfigV.SiPixelPhase1OfflineDQM_harvestingV_cff import *
 from DQMOffline.RecoB.dqmCollector_cff import *
 
 
@@ -37,6 +40,8 @@ postValidation = cms.Sequence(
     + runTauEff + makeBetterPlots
     + bTagCollectorSequenceMCbcl
     + METPostProcessor
+    + L1GenPostProcessor
+    + bdHadronTrackPostProcessor
 )
 from Configuration.Eras.Modifier_phase1Pixel_cff import phase1Pixel
 
@@ -59,6 +64,7 @@ postValidation_fastsim = cms.Sequence(
 from Validation.MuonGEMHits.PostProcessor_cff import *
 from Validation.MuonGEMDigis.PostProcessor_cff import *
 from Validation.MuonGEMRecHits.PostProcessor_cff import *
+from Validation.MuonME0Validation.PostProcessor_cff import *
 from Validation.HGCalValidation.HGCalPostProcessor_cff import *
 
 postValidation_common = cms.Sequence()
@@ -73,6 +79,8 @@ postValidation_muons = cms.Sequence(
     + MuonGEMHitsPostProcessors
     + MuonGEMDigisPostProcessors
     + MuonGEMRecHitsPostProcessors
+    + MuonME0DigisPostProcessors
+    + MuonME0SegPostProcessors
     + rpcRecHitPostValidation_step
 )
 
@@ -99,6 +107,11 @@ postValidationMiniAOD = cms.Sequence(
     electronPostValidationSequenceMiniAOD
 )
 
+_phase1_postValidation = postValidation.copy()
+_phase1_postValidation += siPixelPhase1OfflineDQM_harvestingV
+from Configuration.Eras.Modifier_phase1Pixel_cff import phase1Pixel
+phase1Pixel.toReplaceWith( postValidation, _phase1_postValidation )
+
 _run3_postValidation = postValidation.copy()
 _run3_postValidation += MuonGEMHitsPostProcessors
 _run3_postValidation += MuonGEMDigisPostProcessors
@@ -106,8 +119,13 @@ _run3_postValidation += MuonGEMRecHitsPostProcessors
 
 _phase2_postValidation = _run3_postValidation.copy()
 _phase2_postValidation += hgcalPostProcessor
+_phase2_postValidation += MuonME0DigisPostProcessors
+_phase2_postValidation += MuonME0SegPostProcessors
 
+from Configuration.Eras.Modifier_run2_GEM_2017_MCTest_cff import run2_GEM_2017_MCTest
+run2_GEM_2017_MCTest.toReplaceWith( postValidation, _run3_postValidation )
 from Configuration.Eras.Modifier_run3_GEM_cff import run3_GEM
 run3_GEM.toReplaceWith( postValidation, _run3_postValidation )
 from Configuration.Eras.Modifier_phase2_hgcal_cff import phase2_hgcal
 phase2_hgcal.toReplaceWith( postValidation, _phase2_postValidation )
+

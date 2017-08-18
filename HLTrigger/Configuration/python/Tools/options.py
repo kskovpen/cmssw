@@ -2,8 +2,11 @@
 globalTag = {
   'Fake' : 'auto:run1_mc_Fake',
   'Fake1': 'auto:run2_mc_Fake1',
+  'Fake2': 'auto:run2_mc_Fake2',
   'FULL' : 'auto:run2_mc_FULL',
   'GRun' : 'auto:run2_mc_GRun',       # used as default
+  '2e34v21' : 'auto:run2_mc_2e34v21',
+  '2e34v22' : 'auto:run2_mc_2e34v22',
   'HIon' : 'auto:run2_mc_HIon',
   'PIon' : 'auto:run2_mc_PIon',
   'PRef' : 'auto:run2_mc_PRef',
@@ -108,13 +111,14 @@ class HLTProcessOptions(object):
     self.name       = 'HLTX'      # (*) if set, override the process name
     self.type       = 'GRun'      #     defines global options for 'GRun', 'HIon', 'PIon', 'PRef' or 'online' menus
     self.data       = True        #     run on data (true) or mc (false)
-    self.online     = False       # (*) run online (true) or offline (false)
     self.globaltag  = None        # (*) if set, override the GlobalTag
     self.l1         = None        # (*) if set, override the L1 menu
     self.l1Xml      = None        # (*) if set, override the L1 menu Xml
     self.emulator   = None        # (*) if set, run (part of) the L1 emulator instead of taking the L1 results from the data
     self.prescale   = None        # (*) if set, force the use of a specific prescale column. If set to "none", unprescale all paths
     self.open       = False       #     if set, cms.ignore all filters, making all paths run on and accept all events
+    self.eras       = None        #     if set, select the defined Eras into the HLT configuration
+    self.customise  = None        #     if set, apply the user-defined customization functions using the format HLTrigger/Configuration/customizeHLTTrackingForPhaseI2017.customizeHLTForPFTrackingPhaseI2017
     self.errortype  = False       #     if set, change all HLTTriggerTypeFilter EDFilters to accept only error events (SelectedTriggerType = 0)
     self.profiling  = False       #     if set, instrument the menu for profiling measurements
     self.timing     = False       #     if set, instrument the menu for timing measurements (implies profiling)
@@ -125,6 +129,7 @@ class HLTProcessOptions(object):
     self.output     = 'all'       # (*) output 'all', 'minimal' or 'none' output modules
     self.fragment   = False       #     prepare a configuration fragment (true) or a whole process (false)
     self.hilton     = False       #     prepare a configuration for running with hilton-like modules
+    self.setup      = None        #     if set, downlad the setup_cff from the specified configuration and load it.
 
 
   # convert HLT and L1 menus to a dedicated object representation on the fly

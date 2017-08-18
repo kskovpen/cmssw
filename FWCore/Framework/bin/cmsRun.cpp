@@ -4,6 +4,7 @@ PSet script.   See notes in EventProcessor.cpp for details about it.
 ----------------------------------------------------------------------*/
 
 #include "FWCore/Framework/interface/EventProcessor.h"
+#include "FWCore/Framework/interface/defaultCmsRunServices.h"
 #include "FWCore/MessageLogger/interface/ExceptionMessages.h"
 #include "FWCore/MessageLogger/interface/JobReport.h"
 #include "FWCore/MessageLogger/interface/MessageDrop.h"
@@ -114,7 +115,6 @@ namespace {
       iNThreads = tbb::task_scheduler_init::default_num_threads();
     }
     oPtr = std::make_unique<tbb::task_scheduler_init>(static_cast<int>(iNThreads),iStackSize);
-    edm::LogInfo("ThreadSetup") <<"setting # threads "<<iNThreads;
 
     return iNThreads;
   }
@@ -332,22 +332,10 @@ int main(int argc, char* argv[]) {
       }
 
       context = "Initializing default service configurations";
-      std::vector<std::string> defaultServices;
-      defaultServices.reserve(8);
-      defaultServices.push_back("MessageLogger");
-      defaultServices.push_back("InitRootHandlers");
-#ifdef linux
-      defaultServices.push_back("EnableFloatingPointExceptions");
-#endif
-      defaultServices.push_back("UnixSignalService");
-      defaultServices.push_back("AdaptorConfig");
-      defaultServices.push_back("SiteLocalConfigService");
-      defaultServices.push_back("StatisticsSenderService");
-      defaultServices.push_back("CondorStatusService");
 
       // Default parameters will be used for the default services
       // if they are not overridden from the configuration files.
-      processDesc->addServices(defaultServices);
+      processDesc->addServices(edm::defaultCmsRunServices());
 
       context = "Setting MessageLogger defaults";
       // Decide what mode of hardcoded MessageLogger defaults to use
@@ -364,12 +352,6 @@ int main(int argc, char* argv[]) {
       alwaysAddContext = false;
       context = "Calling beginJob";
       proc->beginJob();
-
-      alwaysAddContext = true;
-      context = "Calling EventProcessor::forkProcess";
-      if (!proc->forkProcess(jobReportFile)) {
-        return 0;
-      }
 
       alwaysAddContext = false;
       context = "Calling EventProcessor::runToCompletion (which does almost everything after beginJob and before endJob)";

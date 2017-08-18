@@ -28,6 +28,8 @@
 #include "SimDataFormats/CaloHit/interface/PCaloHitContainer.h"
 #include "SimDataFormats/CaloTest/interface/HGCalTestNumbering.h"
 
+#include "Geometry/Records/interface/CaloGeometryRecord.h"
+
 #include "L1Trigger/L1THGCal/interface/HGCalTriggerGeometryBase.h"
 #include "L1Trigger/L1THGCal/interface/HGCalTriggerFECodecBase.h"
 #include "L1Trigger/L1THGCal/interface/fe_codecs/HGCalBestChoiceCodecImpl.h"
@@ -57,10 +59,9 @@ class HGCalTriggerBestChoiceTester : public edm::EDAnalyzer
         bool is_Simhit_comp_;
         edm::EDGetToken SimHits_inputee_, SimHits_inputfh_, SimHits_inputbh_;
         //
-        std::unique_ptr<HGCalTriggerGeometryBase> triggerGeometry_; 
+        edm::ESHandle<HGCalTriggerGeometryBase> triggerGeometry_;
         std::unique_ptr<HGCalBestChoiceCodecImpl> codec_;
         edm::Service<TFileService> fs_;
-        HGCalTriggerGeometryBase::es_info info_;
  
         // histos
         TH1F* hgcCellData_;
@@ -105,12 +106,6 @@ HGCalTriggerBestChoiceTester::HGCalTriggerBestChoiceTester(const edm::ParameterS
   // SimHits_inputbh_(consumes<edm::PCaloHitContainer>(conf.getParameter<edm::InputTag>("bhSimHits")))
 /*****************************************************************/
 {
-    //setup geometry 
-    const edm::ParameterSet& geometryConfig = conf.getParameterSet("TriggerGeometry");
-    const std::string& trigGeomName = geometryConfig.getParameter<std::string>("TriggerGeometryName");
-    HGCalTriggerGeometryBase* geometry = HGCalTriggerGeometryFactory::get()->create(trigGeomName,geometryConfig);
-    triggerGeometry_.reset(geometry);
-
     //setup FE codec
     const edm::ParameterSet& feCodecConfig = conf.getParameterSet("FECodec");
     codec_.reset( new HGCalBestChoiceCodecImpl(feCodecConfig) );
@@ -165,19 +160,8 @@ void HGCalTriggerBestChoiceTester::beginRun(const edm::Run& /*run*/,
                                           const edm::EventSetup& es)
 /*****************************************************************/
 {
-    triggerGeometry_->reset();
-    const std::string& ee_sd_name = triggerGeometry_->eeSDName();
-    const std::string& fh_sd_name = triggerGeometry_->fhSDName();
-    const std::string& bh_sd_name = triggerGeometry_->bhSDName();
-    es.get<IdealGeometryRecord>().get(ee_sd_name,info_.geom_ee);
-    es.get<IdealGeometryRecord>().get(fh_sd_name,info_.geom_fh);
-    es.get<IdealGeometryRecord>().get(bh_sd_name,info_.geom_bh);
-    es.get<IdealGeometryRecord>().get(ee_sd_name,info_.topo_ee);
-    es.get<IdealGeometryRecord>().get(fh_sd_name,info_.topo_fh);
-    es.get<IdealGeometryRecord>().get(bh_sd_name,info_.topo_bh);
-    triggerGeometry_->initialize(info_);
-
- }
+    es.get<CaloGeometryRecord>().get(triggerGeometry_);
+}
 
 /*****************************************************************/
 void HGCalTriggerBestChoiceTester::analyze(const edm::Event& e, 
@@ -208,7 +192,7 @@ void HGCalTriggerBestChoiceTester::checkSelectedCells(const edm::Event& e,
     {
         const l1t::HGCalCluster& cluster = *cl_itr;
         uint32_t zside = cluster.eta()<0. ? 0 : 1;
-        auto itr_insert = module_triggercells_all.emplace( std::make_tuple(zside, cluster.subDet(), cluster.layer(), cluster.module()),  std::vector<std::pair<uint32_t,uint32_t>>());
+        auto itr_insert = module_triggercells_all.emplace( std::make_tuple(zside, cluster.subdetId(), cluster.layer(), cluster.module()),  std::vector<std::pair<uint32_t,uint32_t>>());
         itr_insert.first->second.emplace_back(cluster.hwEta(), cluster.hwPt()); // FIXME: the index within the module has been stored in hwEta
     }
     std::map<std::tuple<uint32_t, uint32_t,uint32_t,uint32_t>, std::vector<std::pair<uint32_t,uint32_t>>> module_triggercells_select;
@@ -216,7 +200,7 @@ void HGCalTriggerBestChoiceTester::checkSelectedCells(const edm::Event& e,
     {
         const l1t::HGCalCluster& cluster = *cl_itr;
         uint32_t zside = cluster.eta()<0. ? 0 : 1;
-        auto itr_insert = module_triggercells_select.emplace( std::make_tuple(zside, cluster.subDet(), cluster.layer(), cluster.module()),  std::vector<std::pair<uint32_t,uint32_t>>());
+        auto itr_insert = module_triggercells_select.emplace( std::make_tuple(zside, cluster.subdetId(), cluster.layer(), cluster.module()),  std::vector<std::pair<uint32_t,uint32_t>>());
         itr_insert.first->second.emplace_back(cluster.hwEta(), cluster.hwPt()); // FIXME: the index within the module has been stored in hwEta
     }
 
@@ -289,7 +273,7 @@ void HGCalTriggerBestChoiceTester::rerunBestChoiceFragments(const edm::Event& e,
         simid = (HGCalDetId)simhit.id();
         HGCalTestNumbering::unpackHexagonIndex(simid, subdet, zp, layer, sec, subsec, cell); 
         mysubdet = (ForwardSubdetector)(subdet);
-        std::pair<int,int> recoLayerCell = info_.topo_ee->dddConstants().simToReco(cell,layer,sec,info_.topo_ee->detectorType());
+        std::pair<int,int> recoLayerCell = triggerGeometry_->eeTopology().dddConstants().simToReco(cell,layer,sec,triggerGeometry_->eeTopology().detectorType());
         cell  = recoLayerCell.first;
         layer = recoLayerCell.second;
         if (layer<0 || cell<0) {
@@ -326,7 +310,7 @@ void HGCalTriggerBestChoiceTester::rerunBestChoiceFragments(const edm::Event& e,
         simid = (HGCalDetId) simhit.id();
         HGCalTestNumbering::unpackHexagonIndex(simid, subdet, zp, layer, sec, subsec, cell); 
         mysubdet = (ForwardSubdetector)(subdet);
-        std::pair<int,int> recoLayerCell = info_.topo_fh->dddConstants().simToReco(cell,layer,sec,info_.topo_fh->detectorType());
+        std::pair<int,int> recoLayerCell = triggerGeometry_->fhTopology().dddConstants().simToReco(cell,layer,sec,triggerGeometry_->fhTopology().detectorType());
         cell  = recoLayerCell.first;
         layer = recoLayerCell.second;
         if (layer<0 || cell<0) {

@@ -26,6 +26,9 @@
 #include "CondFormats/CSCObjects/interface/CSCDBPedestals.h"
 #include "CondFormats/CSCObjects/interface/CSCDDUMap.h"
 #include "CondFormats/CSCObjects/interface/CSCL1TPParameters.h"
+#include "CondFormats/CTPPSReadoutObjects/interface/CTPPSPixelDAQMapping.h"
+#include "CondFormats/CTPPSReadoutObjects/interface/CTPPSPixelAnalysisMask.h"
+#include "CondFormats/CTPPSReadoutObjects/interface/CTPPSPixelGainCalibrations.h"
 #include "CondFormats/DTObjects/interface/DTCCBConfig.h"
 #include "CondFormats/DTObjects/interface/DTDeadFlag.h"
 #include "CondFormats/DTObjects/interface/DTHVStatus.h"
@@ -118,6 +121,9 @@
 #include "CondFormats/RPCObjects/interface/RPCObGasMix.h"
 #include "CondFormats/RPCObjects/interface/RPCObPVSSmap.h"
 #include "CondFormats/RPCObjects/interface/RPCObUXC.h"
+#include "CondFormats/RPCObjects/interface/RPCLBLinkMap.h"
+#include "CondFormats/RPCObjects/interface/RPCDCCLinkMap.h"
+#include "CondFormats/RPCObjects/interface/RPCAMCLinkMap.h"
 #include "CondFormats/GeometryObjects/interface/RecoIdealGeometry.h"
 #include "CondFormats/RecoMuonObjects/interface/DYTThrObject.h"
 #include "CondFormats/RecoMuonObjects/interface/MuScleFitDBobject.h"
@@ -246,6 +252,7 @@
 #include "CondFormats/SiStripObjects/interface/SiStripPedestals.h"
 #include "CondFormats/BTauObjects/interface/TrackProbabilityCalibration.h"
 #include "CondFormats/MFObjects/interface/MagFieldConfig.h"
+#include "CondFormats/PCLConfig/interface/AlignPCLThresholds.h"
 
 #include "CondFormats/Common/interface/BaseKeyed.h"
 

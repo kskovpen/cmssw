@@ -17,7 +17,7 @@
 #include "DataFormats/Math/interface/Point3D.h"
 #include "SimDataFormats/ValidationFormats/interface/PHGCalValidInfo.h"
 #include "SimDataFormats/CaloTest/interface/HGCalTestNumbering.h"
-#include "SimDataFormats/CaloTest/interface/HcalTestNumbering.h"
+#include "DataFormats/HcalDetId/interface/HcalTestNumbering.h"
 #include "SimG4CMS/Calo/interface/HGCNumberingScheme.h"
 
 #include "FWCore/Framework/interface/Event.h"
@@ -152,7 +152,7 @@ void SimG4HGCalValidation::update(const BeginOfJob * job) {
       edm::ESHandle<HGCalDDDConstants>    hdc;
       es->get<IdealGeometryRecord>().get(nameX,hdc);
       if (hdc.isValid()) {
-	HGCalGeometryMode m_mode = hdc->geomMode();
+	HGCalGeometryMode::GeometryMode m_mode = hdc->geomMode();
 	hgcNumbering_.push_back(new HGCNumberingScheme(*hdc,nameX));
 	if (m_mode == HGCalGeometryMode::Square) types_[type] = 0;
 	else                                     types_[type] = 1;

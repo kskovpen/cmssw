@@ -16,7 +16,7 @@
 
 //#define DebugLog
 
-HFFibre::HFFibre(std::string & name, const DDCompactView & cpv, 
+HFFibre::HFFibre(const std::string & name, const DDCompactView & cpv, 
 		 edm::ParameterSet const & p) {
 
   edm::ParameterSet m_HF = p.getParameter<edm::ParameterSet>("HFShower");
@@ -27,11 +27,8 @@ HFFibre::HFFibre(std::string & name, const DDCompactView & cpv,
 
   std::string attribute = "Volume"; 
   std::string value     = "HF";
-  DDSpecificsFilter filter1;
-  DDValue           ddv1(attribute,value,0);
-  filter1.setCriteria(ddv1,DDCompOp::equals);
-  DDFilteredView fv1(cpv);
-  fv1.addFilter(filter1);
+  DDSpecificsMatchesValueFilter filter1{DDValue(attribute,value,0)};
+  DDFilteredView fv1(cpv,filter1);
   bool dodet = fv1.firstChild();
 
   if (dodet) {

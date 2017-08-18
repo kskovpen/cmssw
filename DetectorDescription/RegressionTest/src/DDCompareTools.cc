@@ -1,6 +1,6 @@
 #include "DetectorDescription/RegressionTest/interface/DDCompareTools.h"
 
-#include <stddef.h>
+#include <cstddef>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -141,7 +141,7 @@ bool DDCompareCPV::operator()(const DDCompactView& lhs, const DDCompactView& rhs
     if ( ! DDCompareLP(ddco_)(ddLP1, ddLP2) ) {
       ret = false;
       break;
-    } else if (git1->size() && git2->size() ) { 
+    } else if (!git1->empty() && !git2->empty() ) { 
       DDCompactView::graph_type::edge_list::const_iterator cit1  = git1->begin();
       DDCompactView::graph_type::edge_list::const_iterator cend1 = git1->end();
       DDCompactView::graph_type::edge_list::const_iterator cit2  = git2->begin();
@@ -235,6 +235,7 @@ bool DDCompareSolid::operator()(const DDSolid& lhs, const DDSolid& rhs) const {
     case ddpolyhedra_rz:
     case ddpolycone_rrz:
     case ddpolyhedra_rrz:
+    case ddextrudedpolygon:
     case ddtorus:
     case ddpseudotrap:
     case ddtrunctubs:

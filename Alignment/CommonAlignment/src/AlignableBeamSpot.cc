@@ -12,9 +12,6 @@
 #include "CondFormats/Alignment/interface/AlignmentErrorsExtended.h"
 #include "CLHEP/Vector/RotationInterfaces.h" 
 #include "DataFormats/TrackingRecHit/interface/AlignmentPositionError.h"
-#include "Geometry/CommonDetUnit/interface/GeomDet.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
-
 #include "Alignment/CommonAlignment/interface/AlignableBeamSpot.h"
 
 #include "FWCore/Utilities/interface/Exception.h"
@@ -152,6 +149,7 @@ AlignmentErrorsExtended* AlignableBeamSpot::alignmentErrors( void ) const
   return m_alignmentErrors;
 }
 
+//______________________________________________________________________________
 void AlignableBeamSpot::initialize(double x, double y, double z,
 				   double dxdz, double dydz)
 {
@@ -176,4 +174,13 @@ void AlignableBeamSpot::initialize(double x, double y, double z,
   this->dump();
   
   theInitializedFlag = true;
+}
+
+//______________________________________________________________________________
+void AlignableBeamSpot::reset()
+{
+  Alignable::update(this->id(), AlignableSurface());
+  delete theAlignmentPositionError;
+  theAlignmentPositionError = nullptr;
+  theInitializedFlag = false;
 }

@@ -109,6 +109,11 @@ namespace edm {
     return process_found;
   }
 
+  edm::ParameterSet const*
+  Event::parameterSet(edm::ParameterSetID const& psID) const{
+    return parameterSetForID_(psID);
+  }
+  
   BasicHandle
   Event::getByProductID_(ProductID const& oid) const {
     return eventPrincipal().getByProductID(oid);
@@ -199,7 +204,7 @@ namespace edm {
 
   void
   Event::addToGotBranchIDs(Provenance const& prov) const {
-    gotBranchIDs_.insert(prov.branchID());
+    gotBranchIDs_.insert(prov.originalBranchID());
   }
 
   ProcessHistory const&

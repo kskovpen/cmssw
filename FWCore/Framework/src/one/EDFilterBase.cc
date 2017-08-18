@@ -18,6 +18,7 @@
 #include "FWCore/Framework/interface/LuminosityBlock.h"
 #include "FWCore/Framework/interface/Run.h"
 #include "FWCore/Framework/src/edmodule_mightGet_config.h"
+#include "FWCore/Framework/src/PreallocationConfiguration.h"
 #include "FWCore/Framework/src/EventSignalsSentry.h"
 
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -80,6 +81,12 @@ namespace edm {
     }
     
     void
+    EDFilterBase::doPreallocate(PreallocationConfiguration const&iPrealloc) {
+      auto const nThreads = iPrealloc.numberOfThreads();
+      preallocThreads(nThreads);
+    }
+
+    void
     EDFilterBase::doBeginRun(RunPrincipal const& rp, EventSetup const& c,
                              ModuleCallingContext const* mcc) {
       Run r(rp, moduleDescription_, mcc);
@@ -131,16 +138,6 @@ namespace edm {
     void
     EDFilterBase::doRespondToCloseInputFile(FileBlock const& fb) {
       //respondToCloseInputFile(fb);
-    }
-    
-    void
-    EDFilterBase::doPreForkReleaseResources() {
-      preForkReleaseResources();
-    }
-    
-    void
-    EDFilterBase::doPostForkReacquireResources(unsigned int iChildIndex, unsigned int iNumberOfChildren) {
-      postForkReacquireResources(iChildIndex, iNumberOfChildren);
     }
     
     void EDFilterBase::doBeginRun_(Run const& rp, EventSetup const& c) {}

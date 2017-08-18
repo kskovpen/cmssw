@@ -21,6 +21,7 @@ These products should be informational products about the filter decision.
 
 #include <string>
 #include <vector>
+#include <array>
 
 namespace edm {
   namespace maker {
@@ -32,6 +33,7 @@ namespace edm {
   class ActivityRegistry;
   class ProductRegistry;
   class ThinnedAssociationsHelper;
+  class WaitingTask;
 
   class EDFilter : public ProducerBase, public EDConsumerBase {
   public:
@@ -54,6 +56,9 @@ namespace edm {
     bool doEvent(EventPrincipal const& ep, EventSetup const& c,
                  ActivityRegistry* act,
                  ModuleCallingContext const* mcc);
+    //Needed by WorkerT but not supported
+    void preActionBeforeRunEventAsync(WaitingTask* iTask, ModuleCallingContext const& iModuleCallingContext, Principal const& iPrincipal) const {}
+
     void doPreallocate(PreallocationConfiguration const&) {}
     void doBeginJob();
     void doEndJob();    
@@ -67,8 +72,6 @@ namespace edm {
                               ModuleCallingContext const* mcc);
     void doRespondToOpenInputFile(FileBlock const& fb);
     void doRespondToCloseInputFile(FileBlock const& fb);
-    void doPreForkReleaseResources();
-    void doPostForkReacquireResources(unsigned int iChildIndex, unsigned int iNumberOfChildren);
     void doRegisterThinnedAssociations(ProductRegistry const&,
                                        ThinnedAssociationsHelper&) { }
 
@@ -92,8 +95,6 @@ namespace edm {
     virtual void endLuminosityBlock(LuminosityBlock const&, EventSetup const&){}
     virtual void respondToOpenInputFile(FileBlock const&) {}
     virtual void respondToCloseInputFile(FileBlock const&) {}
-    virtual void preForkReleaseResources() {}
-    virtual void postForkReacquireResources(unsigned int /*iChildIndex*/, unsigned int /*iNumberOfChildren*/) {}
      
     void setModuleDescription(ModuleDescription const& md) {
       moduleDescription_ = md;

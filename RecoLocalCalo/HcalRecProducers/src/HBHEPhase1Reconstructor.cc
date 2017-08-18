@@ -74,8 +74,15 @@ namespace {
     class RawChargeFromSample
     {
     public:
-        inline RawChargeFromSample(const HcalDbService& cond,
-                                   const HcalDetId id) {}
+        inline RawChargeFromSample(const int sipmQTSShift,
+                                   const int sipmQNTStoSum,
+                                   const bool saveEffectivePedestal,
+                                   const HcalDbService& cond,
+                                   const HcalDetId id,
+                                   const CaloSamples& cs,
+                                   const int soi,
+                                   const DFrame& frame,
+                                   const int maxTS) {}
 
         inline double getRawCharge(const double decodedCharge,
                                    const double pedestal) const
@@ -86,8 +93,15 @@ namespace {
     class RawChargeFromSample<QIE11DataFrame>
     {
     public:
-        inline RawChargeFromSample(const HcalDbService& cond,
-                                   const HcalDetId id)
+        inline RawChargeFromSample(const int sipmQTSShift,
+                                   const int sipmQNTStoSum,
+                                   const bool saveEffectivePedestal,
+                                   const HcalDbService& cond,
+                                   const HcalDetId id,
+                                   const CaloSamples& cs,
+                                   const int soi,
+                                   const QIE11DataFrame& frame,
+                                   const int maxTS)
             : siPMParameter_(*cond.getHcalSiPMParameter(id)),
               fcByPE_(siPMParameter_.getFCByPE()),
               corr_(cond.getHcalSiPMCharacteristics()->getNonLinearities(siPMParameter_.getType()))
@@ -96,39 +110,46 @@ namespace {
                 throw cms::Exception("HBHEPhase1BadDB")
                     << "Invalid fC/PE conversion factor for SiPM " << id
                     << std::endl;
+
+            const HcalCalibrations& calib = cond.getHcalCalibrations(id);
+            const double darkCurrent = siPMParameter_.getDarkCurrent();
+            const double lambda = cond.getHcalSiPMCharacteristics()->getCrossTalk(siPMParameter_.getType());
+            const int firstTS = std::max(soi + sipmQTSShift, 0);
+            const int lastTS = std::min(firstTS + sipmQNTStoSum, maxTS);
+            double sipmQ = 0.0;
+
+            for (int ts = firstTS; ts < lastTS; ++ts)
+            {
+                const double pedestal = calib.pedestal(frame[ts].capid()) +
+                    (saveEffectivePedestal ? darkCurrent * 25. / (1. - lambda) : 0.);
+                sipmQ += (cs[ts] - pedestal);
+            }
+
+            const double effectivePixelsFired = sipmQ/fcByPE_;
+            factor_ = corr_.getRecoCorrectionFactor(effectivePixelsFired);
         }
 
         inline double getRawCharge(const double decodedCharge,
                                    const double pedestal) const
         {
-            const double sipmQ = decodedCharge - pedestal;
-            const double nPixelsFired = sipmQ/fcByPE_;
-            return sipmQ*corr_.getRecoCorrectionFactor(nPixelsFired) + pedestal;
-        }
+            return (decodedCharge - pedestal)*factor_ + pedestal;
+
+            // Old version of TS-by-TS corrections looked as follows:
+            // const double sipmQ = decodedCharge - pedestal;
+            // const double nPixelsFired = sipmQ/fcByPE_;
+            // return sipmQ*corr_.getRecoCorrectionFactor(nPixelsFired) + pedestal;
+       }
 
     private:
         const HcalSiPMParameter& siPMParameter_;
         double fcByPE_;
         HcalSiPMnonlinearity corr_;
+        double factor_;
     };
 
     float getTDCTimeFromSample(const QIE11DataFrame::Sample& s)
     {
-        // Conversion from TDC to ns for the QIE11 chip
-        static const float qie11_tdc_to_ns = 0.5f;
-
-        // TDC values produced in case the pulse is always above/below
-        // the discriminator
-        static const int qie11_tdc_code_overshoot = 62;
-        static const int qie11_tdc_code_undershoot = 63;
-
-        const int tdc = s.tdc();
-        float t = qie11_tdc_to_ns*tdc;
-        if (tdc == qie11_tdc_code_overshoot)
-            t = HcalSpecialTimes::UNKNOWN_T_OVERSHOOT;
-        else if (tdc == qie11_tdc_code_undershoot)
-            t = HcalSpecialTimes::UNKNOWN_T_UNDERSHOOT;
-        return t;
+        return HcalSpecialTimes::getTDCTime(s.tdc());
     }
 
     float getTDCTimeFromSample(const HcalQIESample&)
@@ -284,9 +305,13 @@ private:
     bool dropZSmarkedPassed_;
     bool tsFromDB_;
     bool recoParamsFromDB_;
+    bool saveEffectivePedestal_;
+    int sipmQTSShift_;
+    int sipmQNTStoSum_;
 
     // Parameters for turning status bit setters on/off
-    bool setNegativeFlags_;
+    bool setNegativeFlagsQIE8_;
+    bool setNegativeFlagsQIE11_;
     bool setNoiseFlagsQIE8_;
     bool setNoiseFlagsQIE11_;
     bool setPulseShapeFlagsQIE8_;
@@ -344,7 +369,11 @@ HBHEPhase1Reconstructor::HBHEPhase1Reconstructor(const edm::ParameterSet& conf)
       dropZSmarkedPassed_(conf.getParameter<bool>("dropZSmarkedPassed")),
       tsFromDB_(conf.getParameter<bool>("tsFromDB")),
       recoParamsFromDB_(conf.getParameter<bool>("recoParamsFromDB")),
-      setNegativeFlags_(conf.getParameter<bool>("setNegativeFlags")),
+      saveEffectivePedestal_(conf.getParameter<bool>("saveEffectivePedestal")),
+      sipmQTSShift_(conf.getParameter<int>("sipmQTSShift")),
+      sipmQNTStoSum_(conf.getParameter<int>("sipmQNTStoSum")),
+      setNegativeFlagsQIE8_(conf.getParameter<bool>("setNegativeFlagsQIE8")),
+      setNegativeFlagsQIE11_(conf.getParameter<bool>("setNegativeFlagsQIE11")),
       setNoiseFlagsQIE8_(conf.getParameter<bool>("setNoiseFlagsQIE8")),
       setNoiseFlagsQIE11_(conf.getParameter<bool>("setNoiseFlagsQIE11")),
       setPulseShapeFlagsQIE8_(conf.getParameter<bool>("setPulseShapeFlagsQIE8")),
@@ -426,7 +455,15 @@ void HBHEPhase1Reconstructor::processData(const Collection& coll,
     {
         const DFrame& frame(*it);
         const HcalDetId cell(frame.id());
-        const HcalRecoParam* param_ts = paramTS_->getValues(cell.rawId());
+
+        // Protection against calibration channels which are not
+        // in the database but can still come in the QIE11DataFrame
+        // in the laser calibs, etc.
+        const HcalSubdetector subdet = cell.subdet();
+        if (!(subdet == HcalSubdetector::HcalBarrel ||
+              subdet == HcalSubdetector::HcalEndcap ||
+              subdet == HcalSubdetector::HcalOuter))
+            continue;
 
         // Check if the database tells us to drop this channel
         const HcalChannelStatus* mydigistatus = qual.getValues(cell.rawId());
@@ -443,12 +480,12 @@ void HBHEPhase1Reconstructor::processData(const Collection& coll,
             continue;
 
         // Basic ADC decoding tools
+        const HcalRecoParam* param_ts = paramTS_->getValues(cell.rawId());
         const HcalCalibrations& calib = cond.getHcalCalibrations(cell);
         const HcalCalibrationWidths& calibWidth = cond.getHcalCalibrationWidths(cell);
         const HcalQIECoder* channelCoder = cond.getHcalCoder(cell);
         const HcalQIEShape* shape = cond.getHcalShape(channelCoder);
         const HcalCoderDb coder(*channelCoder, *shape);
-        const RawChargeFromSample<DFrame> rcfs(cond, cell);
 
         // needed for the dark current in the M2
         const HcalSiPMParameter& siPMParameter(*cond.getHcalSiPMParameter(cell));
@@ -464,6 +501,8 @@ void HBHEPhase1Reconstructor::processData(const Collection& coll,
         const int nRead = cs.size();
         const int maxTS = std::min(nRead, static_cast<int>(HBHEChannelInfo::MAXSAMPLES));
         const int soi = tsFromDB_ ? param_ts->firstSample() : frame.presamples();
+        const RawChargeFromSample<DFrame> rcfs(sipmQTSShift_, sipmQNTStoSum_, saveEffectivePedestal_,
+                                               cond, cell, cs, soi, frame, maxTS);
         int soiCapid = 4;
 
         // Go over time slices and fill the samples
@@ -472,7 +511,9 @@ void HBHEPhase1Reconstructor::processData(const Collection& coll,
             auto s(frame[ts]);
             const uint8_t adc = s.adc();
             const int capid = s.capid();
-            const double pedestal = calib.pedestal(capid);
+            //optionally store "effective" pedestal = QIE contribution (default, from calib.pedestal()) + SiPM contribution (dark current + crosstalk)
+            //only done for pedestal mean, to be used for pedestal subtraction downstream
+            const double pedestal = calib.pedestal(capid) + (saveEffectivePedestal_ ? darkCurrent * 25. / (1. - lambda) : 0.);
             const double pedestalWidth = calibWidth.pedestal(capid);
             const double gain = calib.respcorrgain(capid);
             const double gainWidth = calibWidth.gain(capid);
@@ -518,11 +559,9 @@ void HBHEPhase1Reconstructor::processData(const Collection& coll,
 }
 
 void HBHEPhase1Reconstructor::setCommonStatusBits(
-    const HBHEChannelInfo& info, const HcalCalibrations& calib,
-    HBHERecHit* rh)
+    const HBHEChannelInfo& /* info */, const HcalCalibrations& /* calib */,
+    HBHERecHit* /* rh */)
 {
-    if (setNegativeFlags_)
-        runHBHENegativeEFilter(info, rh);
 }
 
 void HBHEPhase1Reconstructor::setAsicSpecificBits(
@@ -535,6 +574,9 @@ void HBHEPhase1Reconstructor::setAsicSpecificBits(
 
     if (setPulseShapeFlagsQIE8_)
         hbhePulseShapeFlagSetterQIE8_->SetPulseShapeFlags(*rh, frame, coder, calib);
+
+    if (setNegativeFlagsQIE8_)
+        runHBHENegativeEFilter(info, rh);
 }
 
 void HBHEPhase1Reconstructor::setAsicSpecificBits(
@@ -547,6 +589,9 @@ void HBHEPhase1Reconstructor::setAsicSpecificBits(
 
     if (setPulseShapeFlagsQIE11_)
         hbhePulseShapeFlagSetterQIE11_->SetPulseShapeFlags(*rh, frame, coder, calib);
+
+    if (setNegativeFlagsQIE11_)
+        runHBHENegativeEFilter(info, rh);
 }
 
 void HBHEPhase1Reconstructor::runHBHENegativeEFilter(const HBHEChannelInfo& info,
@@ -584,7 +629,7 @@ HBHEPhase1Reconstructor::produce(edm::Event& e, const edm::EventSetup& eventSetu
 
     // Configure the negative energy filter
     ESHandle<HBHENegativeEFilter> negEHandle;
-    if (setNegativeFlags_)
+    if (setNegativeFlagsQIE8_ || setNegativeFlagsQIE11_)
     {
         eventSetup.get<HBHENegativeEFilterRcd>().get(negEHandle);
         negEFilter_ = negEHandle.product();
@@ -722,7 +767,11 @@ HBHEPhase1Reconstructor::fillDescriptions(edm::ConfigurationDescriptions& descri
     desc.add<bool>("dropZSmarkedPassed");
     desc.add<bool>("tsFromDB");
     desc.add<bool>("recoParamsFromDB");
-    desc.add<bool>("setNegativeFlags");
+    desc.add<bool>("saveEffectivePedestal", false);
+    desc.add<int>("sipmQTSShift", 0);
+    desc.add<int>("sipmQNTStoSum", 3);
+    desc.add<bool>("setNegativeFlagsQIE8");
+    desc.add<bool>("setNegativeFlagsQIE11");
     desc.add<bool>("setNoiseFlagsQIE8");
     desc.add<bool>("setNoiseFlagsQIE11");
     desc.add<bool>("setPulseShapeFlagsQIE8");

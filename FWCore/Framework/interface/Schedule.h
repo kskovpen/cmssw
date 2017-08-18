@@ -80,6 +80,7 @@
 #include "FWCore/Utilities/interface/Exception.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 #include "FWCore/Utilities/interface/get_underlying_safe.h"
+#include "FWCore/Utilities/interface/propagate_const.h"
 
 #include <map>
 #include <memory>
@@ -107,7 +108,10 @@ namespace edm {
   struct TriggerTimingReport;
   class ModuleRegistry;
   class ThinnedAssociationsHelper;
+  class SubProcessParentageHelper;
   class TriggerResultInserter;
+  class PathStatusInserter;
+  class EndPathStatusInserter;
   class WaitingTaskHolder;
 
   
@@ -120,10 +124,11 @@ namespace edm {
     typedef std::vector<Worker*> Workers;
 
     Schedule(ParameterSet& proc_pset,
-             service::TriggerNamesService& tns,
+             service::TriggerNamesService const& tns,
              ProductRegistry& pregistry,
              BranchIDListHelper& branchIDListHelper,
              ThinnedAssociationsHelper& thinnedAssociationsHelper,
+             SubProcessParentageHelper const* subProcessParentageHelper,
              ExceptionToActionTable const& actions,
              std::shared_ptr<ActivityRegistry> areg,
              std::shared_ptr<ProcessConfiguration> processConfiguration,
@@ -142,10 +147,23 @@ namespace edm {
                           bool cleaningUpAfterException = false);
 
     template <typename T>
+    void processOneGlobalAsync(WaitingTaskHolder iTask,
+                               typename T::MyPrincipal& principal,
+                               EventSetup const& eventSetup,
+                               bool cleaningUpAfterException = false);
+
+    template <typename T>
     void processOneStream(unsigned int iStreamID,
                           typename T::MyPrincipal& principal,
                           EventSetup const& eventSetup,
                           bool cleaningUpAfterException = false);
+
+    template <typename T>
+    void processOneStreamAsync(WaitingTaskHolder iTask,
+                               unsigned int iStreamID,
+                               typename T::MyPrincipal& principal,
+                               EventSetup const& eventSetup,
+                               bool cleaningUpAfterException = false);
 
     void beginJob(ProductRegistry const&);
     void endJob(ExceptionCollector & collector);
@@ -162,9 +180,6 @@ namespace edm {
     // Call closeFile() on all OutputModules.
     void closeOutputFiles();
 
-    // Call openNewFileIfNeeded() on all OutputModules
-    void openNewOutputFilesIfNeeded();
-
     // Call openFiles() on all OutputModules
     void openOutputFiles(FileBlock& fb);
 
@@ -176,9 +191,6 @@ namespace edm {
 
     // Call shouldWeCloseFile() on all OutputModules.
     bool shouldWeCloseOutput() const;
-
-    void preForkReleaseResources();
-    void postForkReacquireResources(unsigned int iChildIndex, unsigned int iNumberOfChildren);
 
     /// Return a vector allowing const access to all the
     /// ModuleDescriptions for this Schedule.
@@ -262,9 +274,14 @@ namespace edm {
     /// returns the collection of pointers to workers
     AllWorkers const& allWorkers() const;
 
+    /// Convert "@currentProcess" in InputTag process names to the actual current process name.
+    void convertCurrentProcessAlias(std::string const& processName);
+
   private:
 
-    void limitOutput(ParameterSet const& proc_pset, BranchIDLists const& branchIDLists);
+    void limitOutput(ParameterSet const& proc_pset,
+                     BranchIDLists const& branchIDLists,
+                     SubProcessParentageHelper const* subProcessParentageHelper);
 
     std::shared_ptr<TriggerResultInserter const> resultsInserter() const {return get_underlying_safe(resultsInserter_);}
     std::shared_ptr<TriggerResultInserter>& resultsInserter() {return get_underlying_safe(resultsInserter_);}
@@ -272,6 +289,8 @@ namespace edm {
     std::shared_ptr<ModuleRegistry>& moduleRegistry() {return get_underlying_safe(moduleRegistry_);}
 
     edm::propagate_const<std::shared_ptr<TriggerResultInserter>> resultsInserter_;
+    std::vector<edm::propagate_const<std::shared_ptr<PathStatusInserter>>> pathStatusInserters_;
+    std::vector<edm::propagate_const<std::shared_ptr<EndPathStatusInserter>>> endPathStatusInserters_;
     edm::propagate_const<std::shared_ptr<ModuleRegistry>> moduleRegistry_;
     std::vector<edm::propagate_const<std::shared_ptr<StreamSchedule>>> streamSchedules_;
     //In the future, we will have one GlobalSchedule per simultaneous transition
@@ -282,7 +301,9 @@ namespace edm {
 
     edm::propagate_const<std::unique_ptr<SystemTimeKeeper>> summaryTimeKeeper_;
 
-    bool                           wantSummary_;
+    std::vector<std::string> const* pathNames_;
+    std::vector<std::string> const* endPathNames_;
+    bool wantSummary_;
 
     volatile bool           endpathsAreActive_;
   };
@@ -296,6 +317,17 @@ namespace edm {
     assert(iStreamID<streamSchedules_.size());
     streamSchedules_[iStreamID]->processOneStream<T>(ep,es,cleaningUpAfterException);
   }
+  
+  template <typename T>
+  void Schedule::processOneStreamAsync(WaitingTaskHolder iTaskHolder,
+                                       unsigned int iStreamID,
+                                       typename T::MyPrincipal& ep,
+                                       EventSetup const& es,
+                                       bool cleaningUpAfterException) {
+    assert(iStreamID<streamSchedules_.size());
+    streamSchedules_[iStreamID]->processOneStreamAsync<T>(std::move(iTaskHolder),ep,es,cleaningUpAfterException);
+  }
+
   template <typename T>
   void
   Schedule::processOneGlobal(typename T::MyPrincipal& ep,
@@ -303,5 +335,15 @@ namespace edm {
                                  bool cleaningUpAfterException) {
     globalSchedule_->processOneGlobal<T>(ep,es,cleaningUpAfterException);
   }
+  
+  template <typename T>
+  void
+  Schedule::processOneGlobalAsync(WaitingTaskHolder iTaskHolder,
+                                  typename T::MyPrincipal& ep,
+                                  EventSetup const& es,
+                                  bool cleaningUpAfterException) {
+    globalSchedule_->processOneGlobalAsync<T>(iTaskHolder,ep,es,cleaningUpAfterException);
+  }
+
 }
 #endif

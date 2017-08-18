@@ -46,6 +46,7 @@ namespace edm {
   class ActivityRegistry;
   class ProductRegistry;
   class ThinnedAssociationsHelper;
+  class WaitingTask;
 
   namespace maker {
     template<typename T> class ModuleHolderT;
@@ -85,7 +86,7 @@ namespace edm {
       //Same interface as EDConsumerBase
       void itemsToGet(BranchType, std::vector<ProductResolverIndexAndSkipBit>&) const;
       void itemsMayGet(BranchType, std::vector<ProductResolverIndexAndSkipBit>&) const;
-      std::vector<ProductResolverIndexAndSkipBit> const& itemsToGetFromEvent() const;
+      std::vector<ProductResolverIndexAndSkipBit> const& itemsToGetFrom(BranchType) const;
 
       void updateLookup(BranchType iBranchType,
                         ProductResolverIndexHelper const&,
@@ -98,6 +99,8 @@ namespace edm {
                                            std::map<std::string, ModuleDescription const*> const& labelsToDesc,
                                            std::string const& processName) const;
 
+      void convertCurrentProcessAlias(std::string const& processName);
+
       std::vector<ConsumesInfo> consumesInfo() const;
 
     private:
@@ -109,6 +112,9 @@ namespace edm {
                    ActivityRegistry*,
                    ModuleCallingContext const*) ;
       void doPreallocate(PreallocationConfiguration const&);
+      
+      //For now this is a placeholder
+      /*virtual*/ void preActionBeforeRunEventAsync(WaitingTask* iTask, ModuleCallingContext const& iModuleCallingContext, Principal const& iPrincipal) const {}
       
       virtual void setupStreamModules() = 0;
       void doBeginJob();
@@ -146,9 +152,6 @@ namespace edm {
                                           ModuleCallingContext const*)=0;
       virtual void doEndLuminosityBlock(LuminosityBlockPrincipal const& lbp, EventSetup const& c,
                                         ModuleCallingContext const*)=0;
-
-      void doPreForkReleaseResources();
-      void doPostForkReacquireResources(unsigned int iChildIndex, unsigned int iNumberOfChildren);
 
       //For now, the following are just dummy implemenations with no ability for users to override
       void doRespondToOpenInputFile(FileBlock const& fb);

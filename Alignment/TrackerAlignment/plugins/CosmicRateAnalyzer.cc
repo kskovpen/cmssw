@@ -30,6 +30,7 @@ https://twiki.cern.ch/twiki/bin/view/CMS/TkAlCosmicsRateMonitoring
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/Run.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/Common/interface/Handle.h"
@@ -48,6 +49,7 @@ https://twiki.cern.ch/twiki/bin/view/CMS/TkAlCosmicsRateMonitoring
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "CondFormats/SiStripObjects/interface/SiStripLatency.h"                
 #include "CondFormats/DataRecord/interface/SiStripCondDataRecords.h"
+#include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 
 #include "DataFormats/Provenance/interface/Timestamp.h"
 
@@ -55,12 +57,6 @@ https://twiki.cern.ch/twiki/bin/view/CMS/TkAlCosmicsRateMonitoring
 #include "DataFormats/SiStripDetId/interface/SiStripDetId.h"
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
 
-#include "DataFormats/SiStripDetId/interface/TECDetId.h"
-#include "DataFormats/SiStripDetId/interface/TIBDetId.h"
-#include "DataFormats/SiStripDetId/interface/TOBDetId.h"
-#include "DataFormats/SiStripDetId/interface/TIDDetId.h"
-#include "DataFormats/SiPixelDetId/interface/PXBDetId.h"
-#include "DataFormats/SiPixelDetId/interface/PXFDetId.h"
 #include "DataFormats/SiPixelDetId/interface/PixelBarrelName.h"
 #include "DataFormats/SiPixelDetId/interface/PixelEndcapName.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
@@ -229,6 +225,9 @@ CosmicRateAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
    edm::ESHandle<MagneticField> magfield;
    iSetup.get<IdealMagneticFieldRecord>().get(magfield);
 
+   edm::ESHandle<TrackerTopology> tTopo;
+   iSetup.get<TrackerTopologyRcd>().get(tTopo);
+
    edm::Timestamp ts_begin = iEvent.getRun().beginTime();
    double t_begin = stampToReal(ts_begin);
    edm::Timestamp ts_end = iEvent.getRun().endTime();
@@ -298,8 +297,8 @@ CosmicRateAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
           else if (SiStripDetId::TEC == subdetId1)
           { 
              ++nhitinTEC;
-             TECDetId tecId1(detId1);
-             if (tecId1.isZMinusSide()) 
+ 
+             if (tTopo->tecIsZMinusSide(detId1))
              {
                 ++nhitinTECminus;
              }
@@ -314,7 +313,6 @@ CosmicRateAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
           else if (SiStripDetId::TOB == subdetId1)
           {
              ++nhitinTOB;
-             TOBDetId tobId1(detId1);
           }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //			Hit information in TIB		                                	//
@@ -322,7 +320,6 @@ CosmicRateAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
           else if (SiStripDetId::TIB == subdetId1)
           { 
              ++nhitinTIB;
-             TIBDetId tibId1(detId1);
           }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //			Hit information in TID		                                	//
@@ -330,17 +327,17 @@ CosmicRateAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
           else if (SiStripDetId::TID == subdetId1)
           { 
              ++nhitinTID;
-             TIDDetId tidId1(detId1);
-             if (tidId1.isZMinusSide())
+
+             if (tTopo->tidIsZMinusSide(detId1))
              {
                 ++nhitinTIDminus;
              }
-             else 
+             else
              {
                 ++nhitinTIDplus;
              }
           }
-			
+
           countHit++;
       } // for Loop over Hits
 

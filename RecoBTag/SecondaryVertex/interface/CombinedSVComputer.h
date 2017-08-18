@@ -42,7 +42,7 @@
 class CombinedSVComputer {
     public:
 	explicit CombinedSVComputer(const edm::ParameterSet &params);
-
+        virtual ~CombinedSVComputer() = default;
 	virtual reco::TaggingVariableList
 	operator () (const reco::TrackIPTagInfo &ipInfo,
 	             const reco::SecondaryVertexTagInfo &svInfo) const;
@@ -116,6 +116,8 @@ void CombinedSVComputer::fillCommonVariables(reco::TaggingVariableList & vars, r
 
         vars.insert(btau::jetPt, jet->pt(), true);
         vars.insert(btau::jetEta, jet->eta(), true);
+        vars.insert(btau::jetAbsEta, fabs(jet->eta()), true);
+
         if (ipInfo.selectedTracks().size() < trackMultiplicityMin)
                 return;
 

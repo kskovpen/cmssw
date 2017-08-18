@@ -31,7 +31,9 @@
 
 namespace edm {
   class EventPrincipal;
+  class EventSetup;
   class ModuleDescription;
+  class PathStatusInserter;
   class RunPrincipal;
   class LuminosityBlockPrincipal;
   class EarlyDeleteHelper;
@@ -62,6 +64,13 @@ namespace edm {
     void processOneOccurrence(typename T::MyPrincipal const&, EventSetup const&,
                               StreamID const&, typename T::Context const*);
 
+    template <typename T>
+    void runAllModulesAsync(WaitingTask*,
+                            typename T::MyPrincipal const&,
+                            EventSetup  const&,
+                            StreamID const&,
+                            typename T::Context const*);
+
     void processOneOccurrenceAsync(WaitingTask*, EventPrincipal const&, EventSetup const&, StreamID const&, StreamContext const*);
     
     int bitPosition() const { return bitpos_; }
@@ -84,6 +93,9 @@ namespace edm {
     Worker const* getWorker(size_type i) const { return workers_.at(i).getWorker(); }
     
     void setEarlyDeleteHelpers(std::map<const Worker*,EarlyDeleteHelper*> const&);
+
+    void setPathStatusInserter(PathStatusInserter* pathStatusInserter,
+                               Worker* pathStatusInserterWorker);
 
   private:
 
@@ -110,8 +122,9 @@ namespace edm {
     WaitingTaskList waitingTasks_;
     std::atomic<bool>* stopProcessingEvent_;
 
+    PathStatusInserter* pathStatusInserter_;
+    Worker* pathStatusInserterWorker_;
 
-    
     // Helper functions
     // nwrwue = numWorkersRunWithoutUnhandledException (really!)
     bool handleWorkerFailure(cms::Exception & e,
@@ -132,8 +145,11 @@ namespace edm {
     void updateCounters(bool succeed, bool isEvent);
     
     void finished(int iModuleIndex, bool iSucceeded, std::exception_ptr,
-                  StreamContext const*);
-    
+                  StreamContext const*,
+                  EventPrincipal const& iEP,
+                  EventSetup const& iES,
+                  StreamID const& streamID);
+
     void handleEarlyFinish(EventPrincipal const&);
     void handleEarlyFinish(RunPrincipal const&) {}
     void handleEarlyFinish(LuminosityBlockPrincipal const&) {}
@@ -170,6 +186,17 @@ namespace edm {
       hlt::HLTState const& state_;
       PathContext const* pathContext_;
     };
+  }
+
+  template <typename T>
+  void Path::runAllModulesAsync(WaitingTask* task,
+                          typename T::MyPrincipal const& p,
+                          EventSetup  const& es,
+                          StreamID const& streamID,
+                                typename T::Context const* context) {
+    for(auto& worker: workers_) {
+      worker.runWorkerAsync<T>(task,p,es,streamID,context);
+    }
   }
 
   template <typename T>

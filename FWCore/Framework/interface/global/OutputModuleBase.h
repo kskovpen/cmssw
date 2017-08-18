@@ -48,6 +48,7 @@ namespace edm {
   class ActivityRegistry;
   class ProductRegistry;
   class ThinnedAssociationsHelper;
+  class WaitingTask;
 
   template <typename T> class OutputModuleCommunicatorT;
   
@@ -132,6 +133,9 @@ namespace edm {
       bool doEvent(EventPrincipal const& ep, EventSetup const& c,
                    ActivityRegistry*,
                    ModuleCallingContext const*);
+      //For now this is a placeholder
+      /*virtual*/ void preActionBeforeRunEventAsync(WaitingTask* iTask, ModuleCallingContext const& iModuleCallingContext, Principal const& iPrincipal) const {}
+
       bool doBeginRun(RunPrincipal const& rp, EventSetup const& c,
                       ModuleCallingContext const*);
       bool doEndRun(RunPrincipal const& rp, EventSetup const& c,
@@ -203,8 +207,6 @@ namespace edm {
       void doOpenFile(FileBlock const& fb);
       void doRespondToOpenInputFile(FileBlock const& fb);
       void doRespondToCloseInputFile(FileBlock const& fb);
-      void doPreForkReleaseResources();
-      void doPostForkReacquireResources(unsigned int iChildIndex, unsigned int iNumberOfChildren);
       void doRegisterThinnedAssociations(ProductRegistry const&,
                                          ThinnedAssociationsHelper&) { }
 
@@ -212,10 +214,6 @@ namespace edm {
       
       /// Tell the OutputModule that is must end the current file.
       void doCloseFile();
-      
-      /// Tell the OutputModule to open an output file, if one is not
-      /// already open.
-      void maybeOpenFile();
       
       void registerProductsAndCallbacks(OutputModuleBase const*, ProductRegistry const*) {}
 
@@ -236,11 +234,7 @@ namespace edm {
       virtual void writeRun(RunForOutput const&) = 0;
       virtual void openFile(FileBlock const&) {}
       virtual bool isFileOpen() const { return true; }
-      virtual void reallyOpenFile() {}
       
-      virtual void preForkReleaseResources();
-      virtual void postForkReacquireResources(unsigned int /*iChildIndex*/, unsigned int /*iNumberOfChildren*/);
-
       virtual void preallocStreams(unsigned int){}
       virtual void doBeginStream_(StreamID){}
       virtual void doEndStream_(StreamID){}

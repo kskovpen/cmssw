@@ -1,4 +1,5 @@
 import FWCore.ParameterSet.Config as cms
+from DQMServices.Core.DQMEDHarvester import DQMEDHarvester
 from DQM.SiPixelPhase1Common.HistogramManager_cfi import *
 
 
@@ -13,13 +14,18 @@ topFolderName = DefaultHisto.topFolderName.value() +"/FED",
     Specification().groupBy("FED/FED/Event")
                    .reduce("COUNT")
                    .groupBy("FED/FED").save(),
-    Specification().groupBy("FED/FED/FEDChannel")
+    Specification().groupBy("FED/FED/LinkInFed")
                    .groupBy("FED/FED", "EXTEND_X")
                    .save(),
-    Specification().groupBy("FED/FEDChannel")
+    Specification().groupBy("FED/LinkInFed")
                    .groupBy("FED", "EXTEND_X")
                    .groupBy("", "EXTEND_Y")
-                   .save()
+                   .save(),
+    Specification().groupBy("FED/FED/Lumisection")
+    .groupBy("FED/FED","EXTEND_X")
+    .save()
+    .groupBy("")
+    .save()
   )
 )
 
@@ -52,7 +58,7 @@ SiPixelPhase1RawDataTBMType = DefaultHisto.clone(
   name = "tbmtype",
   title = "Type of TBM trailer",
   xlabel = "TBM type",
-  range_min = -0.5, range_max = 4.5, range_nbins = 4,
+  range_min = -0.5, range_max = 4.5, range_nbins = 5,
   dimensions = 1,
   specs = VPSet(
     Specification().groupBy("FED/FED").save(),
@@ -64,14 +70,19 @@ SiPixelPhase1RawDataTypeNErrors = DefaultHisto.clone(
   name = "nerrors_per_type",
   title = "Number of Errors per Type",
   xlabel = "Error Type",
-  range_min = 0, range_max = 50, range_nbins = 51,#TODO: proper range here
+  range_min = 24.5, range_max = 40.5, range_nbins = 16,
   dimensions = 1,
   specs = VPSet(
     Specification().groupBy("FED/FED").save(),
     Specification().groupBy("FED")
                    .groupBy("", "EXTEND_Y").save(),
+    Specification().groupBy("FED/FED/LinkInFed")
+                   .groupBy("FED/FED","EXTEND_Y").save()                  
+
   )
 )
+
+
 
 SiPixelPhase1RawDataConf = cms.VPSet(
   SiPixelPhase1RawDataNErrors,
@@ -87,7 +98,7 @@ SiPixelPhase1RawDataAnalyzer = cms.EDAnalyzer("SiPixelPhase1RawData",
         geometry = SiPixelPhase1Geometry
 )
 
-SiPixelPhase1RawDataHarvester = cms.EDAnalyzer("SiPixelPhase1Harvester",
+SiPixelPhase1RawDataHarvester = DQMEDHarvester("SiPixelPhase1Harvester",
         histograms = SiPixelPhase1RawDataConf,
         geometry = SiPixelPhase1Geometry
 )

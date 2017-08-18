@@ -12,6 +12,7 @@ Toy EDAnalyzers for testing purposes only.
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 #include "FWCore/Framework/interface/stream/EDAnalyzer.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
+#include "FWCore/Framework/interface/global/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -84,10 +85,30 @@ namespace edmtest {
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
       edm::ParameterSetDescription desc;
       desc.addUntracked<edm::InputTag>("getFromModule");
-      descriptions.add("consumeInt", desc);
+      descriptions.addDefault(desc);
 
     }
 
+    
+  };
+  //--------------------------------------------------------------------
+  //
+  class IntFromRunConsumingAnalyzer : public edm::global::EDAnalyzer<> {
+  public:
+    IntFromRunConsumingAnalyzer(edm::ParameterSet const& iPSet)
+    {
+      consumes<IntProduct, edm::InRun>(iPSet.getUntrackedParameter<edm::InputTag>("getFromModule"));
+    }
+    
+    void analyze(edm::StreamID, edm::Event const&, edm::EventSetup const&) const override {}
+    
+    static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+      edm::ParameterSetDescription desc;
+      desc.addUntracked<edm::InputTag>("getFromModule");
+      descriptions.addDefault(desc);
+      
+    }
+    
     
   };
   //--------------------------------------------------------------------
@@ -252,6 +273,7 @@ using edmtest::DSVAnalyzer;
 DEFINE_FWK_MODULE(NonAnalyzer);
 DEFINE_FWK_MODULE(IntTestAnalyzer);
 DEFINE_FWK_MODULE(IntConsumingAnalyzer);
+DEFINE_FWK_MODULE(edmtest::IntFromRunConsumingAnalyzer);
 DEFINE_FWK_MODULE(ConsumingStreamAnalyzer);
 DEFINE_FWK_MODULE(ConsumingOneSharedResourceAnalyzer);
 DEFINE_FWK_MODULE(SCSimpleAnalyzer);

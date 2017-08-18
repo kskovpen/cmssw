@@ -3,9 +3,6 @@ import FWCore.ParameterSet.Config as cms
 # This step runs over all clusters
 
 # run only if there are high pT jets
-from RecoJets.JetProducers.TracksForJets_cff import trackRefsForJets
-initialStepTrackRefsForJets = trackRefsForJets.clone(src = cms.InputTag('initialStepTracks'))
-from RecoJets.JetProducers.caloJetsForTrk_cff import *
 jetsForCoreTracking = cms.EDFilter("CandPtrSelector", src = cms.InputTag("ak4CaloJetsForTrk"), cut = cms.string("pt > 100 && abs(eta) < 2.5"))
 
 # care only at tracks from main PV
@@ -172,10 +169,21 @@ jetCoreRegionalStep.mva.maxDz = [0.5,0.35,0.2];
 jetCoreRegionalStep.mva.maxDr = [0.3,0.2,0.1];
 jetCoreRegionalStep.vertices = 'firstStepGoodPrimaryVertices'
 
+from RecoTracker.FinalTrackSelectors.TrackMVAClassifierPrompt_cfi import *
+trackingPhase1.toReplaceWith(jetCoreRegionalStep, TrackMVAClassifierPrompt.clone(
+     src = 'jetCoreRegionalStepTracks',
+     GBRForestLabel = 'MVASelectorJetCoreRegionalStep_Phase1',
+     qualityCuts = [-0.2,0.0,0.4],
+))
+trackingPhase1QuadProp.toReplaceWith(jetCoreRegionalStep, TrackMVAClassifierPrompt.clone(
+     src = 'jetCoreRegionalStepTracks',
+     GBRForestLabel = 'MVASelectorJetCoreRegionalStep_Phase1',
+     qualityCuts = [-0.2,0.0,0.4],
+))
 
 # Final sequence
-JetCoreRegionalStep = cms.Sequence(initialStepTrackRefsForJets*caloJetsForTrk*jetsForCoreTracking*
-                                   firstStepGoodPrimaryVertices*
+JetCoreRegionalStep = cms.Sequence(cms.ignore(jetsForCoreTracking)*
+                                   cms.ignore(firstStepGoodPrimaryVertices)*
                                    #jetCoreRegionalStepClusters*
                                    jetCoreRegionalStepSeedLayers*
                                    jetCoreRegionalStepTrackingRegions*

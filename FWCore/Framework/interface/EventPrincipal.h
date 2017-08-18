@@ -42,7 +42,6 @@ namespace edm {
   class ThinnedAssociationsHelper;
   class ProcessHistoryRegistry;
   class RunPrincipal;
-  class UnscheduledConfigurator;
 
   class EventPrincipal : public Principal {
   public:
@@ -75,7 +74,8 @@ namespace edm {
                             EventSelectionIDVector&& eventSelectionIDs,
                             BranchListIndexes&& branchListIndexes,
                             ProductProvenanceRetriever const& provRetriever,
-                            DelayedReader* reader = nullptr);
+                            DelayedReader* reader = nullptr,
+                            bool deepCopyRetriever = true);
 
     
     void clearEventPrincipal();
@@ -138,8 +138,6 @@ namespace edm {
 
     ProductProvenanceRetriever const* productProvenanceRetrieverPtr() const {return provRetrieverPtr_.get();}
 
-    void setupUnscheduled(UnscheduledConfigurator const&);
-
     EventSelectionIDVector const& eventSelectionIDs() const;
 
     BranchListIndexes const& branchListIndexes() const;
@@ -158,7 +156,7 @@ namespace edm {
     void putOnRead(
         BranchDescription const& bd,
         std::unique_ptr<WrapperBase> edp,
-        ProductProvenance const& productProvenance) const;
+        ProductProvenance const* productProvenance) const;
 
     virtual WrapperBase const* getIt(ProductID const& pid) const override;
     virtual WrapperBase const* getThinnedProduct(ProductID const& pid, unsigned int& key) const override;

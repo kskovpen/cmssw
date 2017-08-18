@@ -69,7 +69,7 @@ except:
   readFiles = cms.untracked.vstring()
   secFiles = cms.untracked.vstring()
   # this outputs all results, which can be a lot...
-  read, sec = filesFromDASQuery("file dataset=%s" % dataset, option=" --limit 10000 ")
+  read, sec = filesFromDASQuery("file run=%d dataset=%s" % (options.runNumber, dataset), option=" --limit 10000 ")
   readFiles.extend(read)
   secFiles.extend(sec)
 
@@ -78,6 +78,7 @@ print "Got %d files." % len(readFiles)
 runstr = str(options.runNumber)
 runpattern = "*" + runstr[0:3] + "/" + runstr[3:] + "*"
 readFiles = cms.untracked.vstring([f for f in readFiles if fnmatch.fnmatch(f, runpattern)])
+secFiles = cms.untracked.vstring([f for f in secFiles if fnmatch.fnmatch(f, runpattern)])
 lumirange =  cms.untracked.VLuminosityBlockRange(
   [ str(options.runNumber) + ":" + str(ls) 
       for ls in range(options.minLumi, options.maxLumi+1)

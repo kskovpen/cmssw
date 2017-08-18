@@ -19,7 +19,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
+#include "Geometry/CommonDetUnit/interface/GeomDet.h"
 #include "Geometry/CommonDetUnit/interface/GluedGeomDet.h"
 #include "Geometry/CommonTopologies/interface/StripTopology.h"
 
@@ -68,7 +68,7 @@ SiStripLAProfileBooker::SiStripLAProfileBooker(edm::ParameterSet const& conf) :
 
   //BeginRun
 
-void SiStripLAProfileBooker::beginRun(const edm::EventSetup& c){
+void SiStripLAProfileBooker::beginRun(const edm::Run &,const edm::EventSetup& c){
 
   //Retrieve tracker topology from geometry
   edm::ESHandle<TrackerTopology> tTopoHandle;
