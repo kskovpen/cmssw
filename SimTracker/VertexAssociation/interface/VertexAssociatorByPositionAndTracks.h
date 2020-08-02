@@ -15,7 +15,7 @@
  */
 class VertexAssociatorByPositionAndTracks : public reco::VertexToTrackingVertexAssociatorBaseImpl {
 public:
-  VertexAssociatorByPositionAndTracks(const edm::EDProductGetter *productGetter,
+/*  VertexAssociatorByPositionAndTracks(const edm::EDProductGetter *productGetter,
                                       double absZ,
                                       double sigmaZ,
                                       double maxRecoZ,
@@ -33,16 +33,47 @@ public:
                                       double sharedTrackFraction,
                                       const reco::RecoToSimCollection *trackRecoToSimAssociation,
                                       const reco::SimToRecoCollection *trackSimToRecoAssociation);
+*/
+  VertexAssociatorByPositionAndTracks(const edm::EDProductGetter *productGetter,
+                                      double absZ,
+                                      double sigmaZ,
+                                      double maxRecoZ,
+                                      double absT,
+                                      double sigmaT,
+                                      double maxRecoT,
+                                      double sharedTrackFraction);
 
+  VertexAssociatorByPositionAndTracks(const edm::EDProductGetter *productGetter,
+                                      double absZ,
+                                      double sigmaZ,
+                                      double maxRecoZ,
+                                      double sharedTrackFraction);
+   
   ~VertexAssociatorByPositionAndTracks() override;
 
   /* Associate TrackingVertex to RecoVertex By Hits */
-  reco::VertexRecoToSimCollection associateRecoToSim(const edm::Handle<edm::View<reco::Vertex>> &vCH,
+/*  reco::VertexRecoToSimCollection associateRecoToSim(const edm::Handle<edm::View<reco::Vertex>> &vCH,
                                                      const edm::Handle<TrackingVertexCollection> &tVCH) const override;
 
   reco::VertexSimToRecoCollection associateSimToReco(const edm::Handle<edm::View<reco::Vertex>> &vCH,
                                                      const edm::Handle<TrackingVertexCollection> &tVCH) const override;
-
+*/
+/*  reco::VertexRecoToSimCollection associateRecoToSim(const edm::Handle<edm::View<reco::Vertex>> &vCH,
+                                                     const edm::Handle<TrackingVertexCollection> &tVCH,
+						     const reco::RecoToSimCollection &trackRecoToSimAssociation) const;
+*/
+   reco::VertexRecoToSimCollection associateRecoToSim(const edm::Handle<reco::VertexCollection> &vCH,
+                                                     const edm::Handle<TrackingVertexCollection> &tVCH,
+						     const reco::RecoToSimCollection &trackRecoToSimAssociation) const;
+   
+/*  reco::VertexSimToRecoCollection associateSimToReco(const edm::Handle<edm::View<reco::Vertex>> &vCH,
+                                                     const edm::Handle<TrackingVertexCollection> &tVCH,
+						     const reco::SimToRecoCollection &trackSimToRecoAssociation) const;
+*/
+   reco::VertexSimToRecoCollection associateSimToReco(const edm::Handle<reco::VertexCollection> &vCH,
+                                                     const edm::Handle<TrackingVertexCollection> &tVCH,
+						     const reco::SimToRecoCollection &trackSimToRecoAssociation) const;
+   
 private:
   // ----- member data
   const edm::EDProductGetter *productGetter_;
@@ -55,8 +86,8 @@ private:
   const double maxRecoT_;
   const double sharedTrackFraction_;
 
-  const reco::RecoToSimCollection *trackRecoToSimAssociation_;
-  const reco::SimToRecoCollection *trackSimToRecoAssociation_;
+//  const reco::RecoToSimCollection *trackRecoToSimAssociation_;
+//  const reco::SimToRecoCollection *trackSimToRecoAssociation_;
 };
 
 #endif

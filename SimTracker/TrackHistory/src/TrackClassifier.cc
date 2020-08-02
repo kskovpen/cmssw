@@ -73,6 +73,7 @@ void TrackClassifier::newEvent(edm::Event const &event, edm::EventSetup const &s
 }
 
 TrackClassifier const &TrackClassifier::evaluate(reco::TrackBaseRef const &track) {
+//TrackClassifier const &TrackClassifier::evaluate(reco::TrackRef const &track) {
   // Initializing the category vector
   reset();
 

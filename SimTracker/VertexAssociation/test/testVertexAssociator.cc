@@ -91,7 +91,7 @@ void testVertexAssociator::endJob() {
 void testVertexAssociator::analyze(const edm::Event &event, const edm::EventSetup &setup) {
   using namespace edm;
   using namespace reco;
-
+/*
   edm::ESHandle<MagneticField> theMF;
   setup.get<IdealMagneticFieldRecord>().get(theMF);
 
@@ -265,7 +265,7 @@ void testVertexAssociator::analyze(const edm::Event &event, const edm::EventSetu
     }  // end recoVertices
 
   }  // end iS2R
-
+*/
   cout << endl;
 }
 

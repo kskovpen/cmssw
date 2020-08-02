@@ -22,10 +22,9 @@ double TrackAssociatorByChi2Impl::getChi2(const TrackBase::ParameterVector& rPar
 
 RecoToSimCollection TrackAssociatorByChi2Impl::associateRecoToSim(const edm::RefToBaseVector<reco::Track>& tC, 
                                                                   const edm::RefVector<TrackingParticleCollection>& tPCH) const {
-
   const reco::BeamSpot& bs = *theBeamSpot;
 
-  RecoToSimCollection  outputCollection;
+  RecoToSimCollection  outputCollection(productGetter_);
 
   //dereference the edm::Refs only once
   std::vector<TrackingParticle const*> tPC;
@@ -53,10 +52,10 @@ RecoToSimCollection TrackAssociatorByChi2Impl::associateRecoToSim(const edm::Ref
     } 
 
     recoTrackCovMatrix.Invert();
-
+     
     int tpindex =0;
     for (auto tp=tPC.begin(); tp!=tPC.end(); tp++, ++tpindex){
-	
+       
       //skip tps with a very small pt
       //if (sqrt((*tp)->momentum().perp2())<0.5) continue;
       int charge = (*tp)->charge();
@@ -73,7 +72,9 @@ RecoToSimCollection TrackAssociatorByChi2Impl::associateRecoToSim(const edm::Ref
       }
     }
   }
+
   outputCollection.post_insert();
+
   return outputCollection;
 }
 

@@ -37,6 +37,7 @@ public:
   bool evaluate(TrackingParticleRef tpr) {
     if (enableSimToReco_) {
       std::pair<reco::TrackBaseRef, double> result = match(tpr, simToReco_, bestMatchByMaxValue_);
+//      std::pair<reco::TrackRef, double> result = match(tpr, simToReco_, bestMatchByMaxValue_);
       recotrack_ = result.first;
       quality_ = result.second;
     }
@@ -50,9 +51,11 @@ public:
      /param[out] boolean that is false when a fake track is detected
   */
   bool evaluate(reco::TrackBaseRef);
+//  bool evaluate(reco::TrackRef);
 
   //! Return a reference to the reconstructed track.
   const reco::TrackBaseRef &recoTrack() const { return recotrack_; }
+//  const reco::TrackRef &recoTrack() const { return recotrack_; }
 
   // return the TrackingParticle to which the Track was matched
   const std::pair<TrackingParticleRef, double> getMatchedTrackingParticle() const {
@@ -81,6 +84,7 @@ private:
   edm::InputTag trackAssociator_;
 
   reco::TrackBaseRef recotrack_;
+//  reco::TrackRef recotrack_;
 
   TrackingParticleRef trackingParticle_;
 

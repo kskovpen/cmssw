@@ -9,10 +9,16 @@
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertexContainer.h"
 
-namespace reco {
+/*namespace reco {
   typedef edm::AssociationMap<edm::OneToManyWithQuality<TrackingVertexCollection, edm::View<reco::Vertex>, double>>
       VertexSimToRecoCollection;
   typedef edm::AssociationMap<edm::OneToManyWithQuality<edm::View<reco::Vertex>, TrackingVertexCollection, double>>
+      VertexRecoToSimCollection;
+}  // namespace reco*/
+namespace reco {
+  typedef edm::AssociationMap<edm::OneToManyWithQuality<TrackingVertexCollection, VertexCollection, double>>
+      VertexSimToRecoCollection;
+  typedef edm::AssociationMap<edm::OneToManyWithQuality<VertexCollection, TrackingVertexCollection, double>>
       VertexRecoToSimCollection;
 }  // namespace reco
 

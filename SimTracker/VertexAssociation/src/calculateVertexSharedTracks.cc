@@ -5,6 +5,7 @@ unsigned int calculateVertexSharedTracks(const reco::Vertex &recoV,
                                          const reco::RecoToSimCollection &trackRecoToSimAssociation) {
   unsigned int sharedTracks = 0;
   for (auto iTrack = recoV.tracks_begin(); iTrack != recoV.tracks_end(); ++iTrack) {
+
     auto found = trackRecoToSimAssociation.find(*iTrack);
 
     if (found == trackRecoToSimAssociation.end())

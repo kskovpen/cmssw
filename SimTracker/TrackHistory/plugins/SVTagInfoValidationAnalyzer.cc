@@ -75,7 +75,8 @@ private:
 
   // Fill all histogram per category
   void fillRecoToSim(std::string const &, reco::Vertex const &, TrackingVertexRef const &);
-  void fillSimToReco(std::string const &, reco::VertexBaseRef const &, TrackingVertexRef const &);
+//  void fillSimToReco(std::string const &, reco::VertexBaseRef const &, TrackingVertexRef const &);
+  void fillSimToReco(std::string const &, reco::VertexRef const &, TrackingVertexRef const &);
 
   // Histogram handlers
   std::map<std::string, TH1D *> TH1Index_;
@@ -600,8 +601,11 @@ void SVTagInfoValidationAnalyzer::fillRecoToSim(std::string const &prefix,
   TH1Index_[prefix + "_SimCharge"]->Fill(simcharge);
 }
 
-void SVTagInfoValidationAnalyzer::fillSimToReco(std::string const &prefix,
+/*void SVTagInfoValidationAnalyzer::fillSimToReco(std::string const &prefix,
                                                 reco::VertexBaseRef const &vertex,
+                                                TrackingVertexRef const &simVertex) {*/
+void SVTagInfoValidationAnalyzer::fillSimToReco(std::string const &prefix,
+                                                reco::VertexRef const &vertex,
                                                 TrackingVertexRef const &simVertex) {
   double pullx = (vertex->x() - simVertex->position().x()) / vertex->xError();
   double pully = (vertex->y() - simVertex->position().y()) / vertex->yError();

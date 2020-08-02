@@ -39,6 +39,7 @@ public:
 
   //! Classify the RecoTrack in categories.
   TrackClassifier const &evaluate(reco::TrackBaseRef const &);
+//  TrackClassifier const &evaluate(reco::TrackRef const &);
 
   //! Classify the TrackingParticle in categories.
   TrackClassifier const &evaluate(TrackingParticleRef const &);

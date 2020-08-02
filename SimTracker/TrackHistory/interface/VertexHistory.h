@@ -37,7 +37,8 @@ public:
   */
   bool evaluate(TrackingVertexRef tvr) {
     if (enableSimToReco_) {
-      std::pair<reco::VertexBaseRef, double> result = match(tvr, simToReco_, bestMatchByMaxValue_);
+//      std::pair<reco::VertexBaseRef, double> result = match(tvr, simToReco_, bestMatchByMaxValue_);
+      std::pair<reco::VertexRef, double> result = match(tvr, simToReco_, bestMatchByMaxValue_);
       recovertex_ = result.first;
       quality_ = result.second;
     }
@@ -50,10 +51,12 @@ public:
      /param[in] VertexRef to a reco::track
      /param[out] boolean that is false when a fake track is detected
   */
-  bool evaluate(reco::VertexBaseRef);
+//  bool evaluate(reco::VertexBaseRef);
+  bool evaluate(reco::VertexRef);
 
   //! Return a reference to the reconstructed track.
-  const reco::VertexBaseRef &recoVertex() const { return recovertex_; }
+//  const reco::VertexBaseRef &recoVertex() const { return recovertex_; }
+  const reco::VertexRef &recoVertex() const { return recovertex_; }
 
   //! Return the quality of the match.
   double quality() const { return quality_; }
@@ -71,7 +74,8 @@ private:
 
   edm::InputTag vertexAssociator_;
 
-  reco::VertexBaseRef recovertex_;
+//  reco::VertexBaseRef recovertex_;
+  reco::VertexRef recovertex_;
 
   reco::VertexRecoToSimCollection recoToSim_;
 

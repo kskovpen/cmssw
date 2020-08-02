@@ -23,7 +23,8 @@ VertexHistory::VertexHistory(const edm::ParameterSet &config, edm::ConsumesColle
   enableSimToReco_ = config.getUntrackedParameter<bool>("enableSimToReco");
 
   if (enableRecoToSim_ or enableSimToReco_) {
-    collector.consumes<edm::View<reco::Vertex>>(vertexProducer_);
+//    collector.consumes<edm::View<reco::Vertex>>(vertexProducer_);
+    collector.consumes<reco::VertexCollection>(vertexProducer_);
     collector.consumes<TrackingVertexCollection>(trackingTruth_);
     collector.consumes<reco::VertexToTrackingVertexAssociator>(vertexAssociator_);
   }
@@ -34,7 +35,8 @@ VertexHistory::VertexHistory(const edm::ParameterSet &config, edm::ConsumesColle
 void VertexHistory::newEvent(const edm::Event &event, const edm::EventSetup &setup) {
   if (enableRecoToSim_ || enableSimToReco_) {
     // Vertex collection
-    edm::Handle<edm::View<reco::Vertex>> vertexCollection;
+//    edm::Handle<edm::View<reco::Vertex>> vertexCollection;
+    edm::Handle<reco::VertexCollection> vertexCollection;
     event.getByLabel(vertexProducer_, vertexCollection);
 
     // Tracking particle information
@@ -47,17 +49,18 @@ void VertexHistory::newEvent(const edm::Event &event, const edm::EventSetup &set
 
     if (enableRecoToSim_) {
       // Calculate the map between recovertex -> simvertex
-      recoToSim_ = vertexAssociator->associateRecoToSim(vertexCollection, TVCollection);
+////should be updated      recoToSim_ = vertexAssociator->associateRecoToSim(vertexCollection, TVCollection);
     }
 
     if (enableSimToReco_) {
       // Calculate the map between recovertex <- simvertex
-      simToReco_ = vertexAssociator->associateSimToReco(vertexCollection, TVCollection);
+////should be updated      simToReco_ = vertexAssociator->associateSimToReco(vertexCollection, TVCollection);
     }
   }
 }
 
-bool VertexHistory::evaluate(reco::VertexBaseRef tv) {
+//bool VertexHistory::evaluate(reco::VertexBaseRef tv) {
+bool VertexHistory::evaluate(reco::VertexRef tv) {
   if (!enableRecoToSim_)
     return false;
 
