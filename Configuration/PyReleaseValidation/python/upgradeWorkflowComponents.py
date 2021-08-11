@@ -385,6 +385,36 @@ upgradeWFs['trackdnn'] = UpgradeWorkflow_trackdnn(
 )
 
 
+# Track Looper workflows
+class UpgradeWorkflow_tracklooper(UpgradeWorkflow):
+    def setup_(self, step, stepName, stepDict, k, properties):        
+        stepDict[stepName][k] = merge([{'--customise_commands': '\"\
+        process.initialStepTrajectoryBuilderPreSplitting.maxPtForLooperReconstruction = cms.double(0.0);\
+        process.initialStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.lowPtQuadStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.lowPtTripletStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.detachedQuadStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.detachedTripletStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.mixedTripletStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.pixelPairStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.pixelLessStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.tobTecStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\
+        process.jetCoreRegionalStepTrajectoryBuilder.maxPtForLooperReconstruction = 0.0;\"'}, stepDict[step][k]])
+
+    def condition(self, fragment, stepList, key, hasHarvest):
+        return fragment in ["BuToJPsiPrimePhiToJPsiPiKK_14TeV", "Psi2SToJPsiPiPi_14TeV"] and '2021' in key
+upgradeWFs['tracklooper'] = UpgradeWorkflow_tracklooper(
+    steps = [
+        'Reco',
+    ],
+    PU = [
+        'Reco',
+    ],
+    suffix = '_tracklooper',
+    offset = 0.92,
+)
+
+
 # MLPF workflows
 class UpgradeWorkflow_mlpf(UpgradeWorkflow):
     def setup_(self, step, stepName, stepDict, k, properties):
@@ -1430,4 +1460,6 @@ upgradeFragments = OrderedDict([
     ('DoubleElectronFlatPt1p5To8_cfi', UpgradeFragment(Kby(9,100),'SingleElectronFlatPt1p5To8')),
     ('DoubleMuFlatPt1p5To8Dxy100GunProducer_cfi', UpgradeFragment(Kby(9,100),'DisplacedMuPt1p5To8Dxy100')),
     ('DoubleMuFlatPt2To100Dxy100GunProducer_cfi', UpgradeFragment(Kby(9,100),'DisplacedMuPt2To100Dxy100')),
+    ('BuToJPsiPrimePhiToJPsiPiKK_14TeV_TuneCP5_pythia8_cfi', UpgradeFragment(Kby(50,100),'BuToJPsiPrimePhiToJPsiPiKK_14TeV')),
+    ('Psi2SToJPsiPiPi_14TeV_TuneCP5_pythia8_cfi', UpgradeFragment(Kby(50,100),'Psi2SToJPsiPiPi_14TeV')),
 ])
