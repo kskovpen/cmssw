@@ -3460,6 +3460,14 @@ for year,k in [(year,k) for year in upgradeKeys for k in upgradeKeys[year]]:
                                     '--scenario' : 'pp',
                                     '--filetype':'DQM',
                                     }
+                                    
+    upgradeStepDict['HARVESTNANO'][k]={'-s':'HARVESTING:@nanoAODDQM',
+                                        '--conditions':gt,
+                                        '--mc':'',
+                                        '--geometry' : geom,
+                                        '--scenario' : 'pp',
+                                        '--filetype':'DQM',
+                                        }
 
     upgradeStepDict['HARVESTFakeHLT'][k]={'-s':'HARVESTING:@standardValidationNoHLT+@standardDQMFakeHLT+@miniAODValidation+@miniAODDQM',
                                     '--conditions':gt,
