@@ -217,6 +217,16 @@ trackingPhase2PU140.toModify(initialStepTrajectoryBuilder,
     keepOriginalIfRebuildFails = True,
 )
 
+# alpaka
+from Configuration.ProcessModifiers.alpaka_cff import alpaka
+from RecoTracker.PixelTrackFitting.PixelTracks_cff import *
+import RecoTracker.TkSeedGenerator.SeedGeneratorFromProtoTracksEDProducer_cfi
+initialStepAlpakaSeeds = RecoTracker.TkSeedGenerator.SeedGeneratorFromProtoTracksEDProducer_cfi.SeedGeneratorFromProtoTracksEDProducer.clone(
+    InputCollection = 'pixelTracks',
+    TTRHBuilder = 'WithTrackAngle'
+)
+alpaka.toReplaceWith(initialStepSeeds,initialStepAlpakaSeeds)
+
 import RecoTracker.CkfPattern.CkfTrackCandidates_cfi
 # Give handle for CKF for HI
 _initialStepTrackCandidatesCkf = RecoTracker.CkfPattern.CkfTrackCandidates_cfi.ckfTrackCandidatesIterativeDefault.clone(
@@ -435,6 +445,7 @@ InitialStepTask = cms.Task(initialStepSeedLayers,
                            initialStepHitDoublets,
                            initialStepHitTriplets,
                            initialStepSeeds,
+                           pixelTracksTask,
                            initialStepTrackCandidates,
                            initialStepTracks,
                            firstStepPrimaryVerticesUnsorted,
