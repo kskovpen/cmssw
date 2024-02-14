@@ -227,8 +227,14 @@ pixelTracksAlpakaSerial = makeSerialClone(pixelTracksAlpaka,
 from  RecoTracker.PixelTrackFitting.pixelTrackProducerFromSoAAlpakaPhase1_cfi import pixelTrackProducerFromSoAAlpakaPhase1 as _pixelTrackProducerFromSoAAlpakaPhase1
 from  RecoTracker.PixelTrackFitting.pixelTrackProducerFromSoAAlpakaPhase2_cfi import pixelTrackProducerFromSoAAlpakaPhase2 as _pixelTrackProducerFromSoAAlpakaPhase2
 
+from RecoLocalTracker.SiPixelRecHits.siPixelRecHitAlpakaPhase1_cfi import siPixelRecHitAlpakaPhase1 as _siPixelRecHitAlpakaPhase1
+
+siPixelRecHitsPreSplittingAlpaka = _siPixelRecHitAlpakaPhase1.clone(
+    src = "siPixelClustersPreSplittingAlpaka"
+)
+
 (alpaka & ~phase2_tracker).toReplaceWith(pixelTracks, _pixelTrackProducerFromSoAAlpakaPhase1.clone(
-    pixelRecHitLegacySrc = "siPixelRecHitsPreSplitting",
+    pixelRecHitLegacySrc = "siPixelRecHitsPreSplittingAlpaka",
 ))
 
 (alpaka & phase2_tracker).toReplaceWith(pixelTracks, _pixelTrackProducerFromSoAAlpakaPhase2.clone(
