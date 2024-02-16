@@ -366,6 +366,12 @@ highPtJetsForTrk = highPtJets.clone(src = "ak4CaloJetsForTrk")
 # Select B-hadron TPs
 trackingParticlesBHadron = _trackingParticleBHadronRefSelector.clone()
 
+tpClusterProducerPreSplitting = tpClusterProducer.clone(pixelClusterSrc = "siPixelClustersPreSplitting")
+quickTrackAssociatorByHitsPreSplitting = quickTrackAssociatorByHits.clone(cluster2TPSrc = "tpClusterProducerPreSplitting")
+trackingParticleRecoTrackAsssociationPreSplitting = trackingParticleRecoTrackAsssociation.clone(
+    associator = "quickTrackAssociatorByHitsPreSplitting"
+)
+
 ## MTV instances
 trackValidator = Validation.RecoTrack.MultiTrackValidator_cfi.multiTrackValidator.clone(
     useLogPt = cms.untracked.bool(True),
@@ -708,6 +714,7 @@ tracksValidationTruth = cms.Task(
     quickTrackAssociatorByHits,
     quickTrackAssociatorByHitsPreSplitting,
     trackingParticleRecoTrackAsssociation,
+    trackingParticleRecoTrackAsssociationPreSplitting,
     VertexAssociatorByPositionAndTracks,
     trackingParticleNumberOfLayersProducer
 )

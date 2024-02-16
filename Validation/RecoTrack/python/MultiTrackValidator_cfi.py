@@ -23,7 +23,7 @@ multiTrackValidator = DQMEDAnalyzer(
 
     ### matching configuration ###
     # Example of TP-Track map
-    associators = cms.untracked.VInputTag("trackingParticleRecoTrackAsssociation"),
+    associators = cms.untracked.VInputTag("trackingParticleRecoTrackAsssociationPreSplitting"),
     # Example of associator
     #associators = cms.untracked.VInputTag("quickTrackAssociatorByHits"),
     # if False, the src's above should specify the TP-RecoTrack association
