@@ -371,6 +371,9 @@ quickTrackAssociatorByHitsPreSplitting = quickTrackAssociatorByHits.clone(cluste
 trackingParticleRecoTrackAsssociationPreSplitting = trackingParticleRecoTrackAsssociation.clone(
     associator = "quickTrackAssociatorByHitsPreSplitting"
 )
+VertexAssociatorByPositionAndTracksPreSplitting = VertexAssociatorByPositionAndTracks.clone(
+    trackAssociation = "trackingParticleRecoTrackAsssociationPreSplitting"
+)
 
 ## MTV instances
 trackValidator = Validation.RecoTrack.MultiTrackValidator_cfi.multiTrackValidator.clone(
@@ -716,6 +719,7 @@ tracksValidationTruth = cms.Task(
     trackingParticleRecoTrackAsssociation,
     trackingParticleRecoTrackAsssociationPreSplitting,
     VertexAssociatorByPositionAndTracks,
+    VertexAssociatorByPositionAndTracksPreSplitting,
     trackingParticleNumberOfLayersProducer
 )
 
