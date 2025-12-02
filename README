@@ -5,6 +5,9 @@ git cms-addpkg PhysicsTools/NanoAOD
 git cms-addpkg PhysicsTools/PatAlgos
 git cms-addpkg DataFormats/BTauReco
 git clone http://github.com/kskovpen/PhysicsTools-NanoAOD PhysicsTools/NanoAOD/data
+cd PhysicsTools/NanoAOD/data
+git checkout leptonPNet
+cd -
 git cms-addpkg ParticleNetNtuplizer/ParticleNetNtuplizer
 wget https://raw.githubusercontent.com/kskovpen/cmssw/refs/heads/leptonPNet/step_3_cfg.py
 scram b
